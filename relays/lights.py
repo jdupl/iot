@@ -2,8 +2,8 @@ import time
 import datetime as dt
 import RPi.GPIO as GPIO
 
-open_time = dt.time(3, 51, 45)
-close_time = dt.time(3, 52, 30)
+open_time = dt.time(5, 0, 0)
+close_time = dt.time(23, 55, 0)
 light_pins = [14, 15]  # GPIO pins of the relay (BCM)
 
 
