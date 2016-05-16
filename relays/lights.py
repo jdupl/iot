@@ -4,7 +4,7 @@ import RPi.GPIO as GPIO
 
 open_time = dt.time(3, 51, 45)
 close_time = dt.time(3, 52, 30)
-light_pins = [14, 15]  # GPIO pins of the relay
+light_pins = [14, 15]  # GPIO pins of the relay (BCM)
 
 
 def get_events(time_array, future):
@@ -51,6 +51,7 @@ def setup_light_pins(pins):
 def control_lights():
     __curr_state = 'off'
     GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
     setup_light_pins(light_pins)
 
     while True:
