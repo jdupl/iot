@@ -4,7 +4,7 @@ import RPi.GPIO as GPIO
 
 open_time = dt.time(5, 0, 0)
 close_time = dt.time(23, 55, 0)
-light_pins = [0, 1]  # GPIO pins of the relay (BCM)
+light_pins = [23, 24]  # GPIO pins of the relay (BCM)
 
 
 def get_events(time_array, future):
