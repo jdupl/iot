@@ -72,4 +72,12 @@ def control_lights():
             time.sleep(sleep_until)
 
 if __name__ == '__main__':
-    control_lights()
+    try:
+        control_lights()
+    except KeyboardInterrupt:
+        print('Got KeyboardInterrupt.')
+    except Exception as e:
+        print('Got unexpected fatal Exception: %s' % str(e))
+    finally:
+        # Reset GPIO
+        GPIO.cleanup()
