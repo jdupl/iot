@@ -65,12 +65,12 @@ def control_lights():
             lights(wanted_state)
             __curr_state = wanted_state
 
-            next_event = get_next_event([open_time, close_time])[0]
-            next_change_in = (next_event - now).total_seconds()
-            print('Next_change_in %s' % next_change_in)
+        next_event = get_next_event([open_time, close_time])[0]
+        next_change_in = (next_event - now).total_seconds()
+        print('Next_change_in %s' % next_change_in)
 
-            sleep_until = next_change_in + 1
-            time.sleep(sleep_until)
+        sleep_until = next_change_in + 1
+        time.sleep(sleep_until)
 
 if __name__ == '__main__':
     try:
