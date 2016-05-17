@@ -1,0 +1,1 @@
+-e git+ssh://github.com/jdupl/dht11-python.git#egg=DHT11
