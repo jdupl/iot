@@ -17,7 +17,7 @@ def get_events(time_array, future):
                                  second=t.second)
         event = (event_time, 'on' if i == 0 else 'off')
 
-        if (future and event_time > now) or (not future and event_time > now):
+        if (future and event_time > now) or (not future and event_time < now):
             events.append(event)
 
         events.append((event_time + dt.timedelta(days=delta), event[1]))
