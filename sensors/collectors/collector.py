@@ -8,3 +8,6 @@ class Collector():
 
     def collect_data(self):
         raise Exception('Not implemented')
+
+    def get_csv_headers(self):
+        raise Exception('Not implemented')

@@ -7,3 +7,6 @@ class DHT11Collector(Collector):
     def get_data(self):
         sensor = DHT11(self.pin_num)
         return sensor.get_result()
+
+    def get_csv_headers(self):
+        return ['Temperature (C)', 'Humidity (%)']
