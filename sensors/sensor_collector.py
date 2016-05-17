@@ -5,16 +5,23 @@ import os
 from collectors.dht11 import DHT11Collector
 
 
-def collect_data():
-    collector_instance = DHT11Collector(14)
-    csv_path = 'sensor_1.csv'
+def get_sensors():
+    c1 = DHT11Collector(14, 'sensor_1.csv')
+    c2 = DHT11Collector(15, 'sensor_2.csv')
 
-    write_csv_headers(csv_path, collector_instance)
+    return [c1, c2]
+
+
+def collect_data():
+    collector_instances = get_sensors()
+
+    write_csv_headers(collector_instances)
 
     while True:
-        r = collector_instance.get_data()
-        if r:
-            write(r, csv_path, collector_instance)
+        for c in collector_instances:
+            r = c.get_data()
+            if r:
+                write(r, c.csv_path, c)
         time.sleep(60)
 
 
@@ -24,13 +31,17 @@ def write(result, csv_path, collector_instance):
         writer.writerow([time.time(), *result])
 
 
-def write_csv_headers(csv_path, collector_instance):
-    if os.path.exists(csv_path):
-        return
-    with open(csv_path, 'w') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['Unix epoch (s)',
-                        *collector_instance.get_csv_headers()])
+def write_csv_headers(collector_instances):
+    for c in collector_instances:
+        csv_path = c.csv_path
+
+        if os.path.exists(csv_path):
+            continue
+
+        headers = ['Unix epoch (s)', *c.get_csv_headers()]
+        with open(csv_path, 'w') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(headers)
 
 if __name__ == '__main__':
     collect_data()
