@@ -21,16 +21,17 @@ def get_events(time_array, future):
             events.append(event)
 
         events.append((event_time + dt.timedelta(days=delta), event[1]))
-
     return events
 
 
-def get_lastest_event(time_array):
-    return sorted(get_events(time_array, False))[0]
+def get_latest_event(time_array):
+    past = sorted(get_events(time_array, False), reverse=True)
+    return past[0]
 
 
 def get_next_event(time_array):
-    return sorted(get_events(time_array, True))[0]
+    future = sorted(get_events(time_array, True))
+    return future[0]
 
 
 def lights(state_str):
@@ -58,7 +59,7 @@ def control_lights():
         now = dt.datetime.now()
         print('Currently %s.' % str(now))
 
-        wanted_state = get_lastest_event([open_time, close_time])[1]
+        wanted_state = get_latest_event([open_time, close_time])[1]
 
         if __curr_state != wanted_state:
             print('Bringing lights %s.' % wanted_state)
