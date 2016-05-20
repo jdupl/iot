@@ -17,9 +17,11 @@ class Record(db.Model):
 @app.route('/', methods=['POST'])
 def hub():
     data = request.data
-    record = Record(data)
-    db.session.add(record)
-    db.session.commit()
+    records = data.decode('utf-8').split('\n')
+    for val in records:
+        record = Record(val)
+        db.session.add(record)
+        db.session.commit()
     return 'ok'
 
 if __name__ == '__main__':

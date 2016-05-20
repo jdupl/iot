@@ -25,5 +25,14 @@ class HubTest(unittest.TestCase):
         records = Record.query.all()
         assert len(records) == 1
 
+    def test_multiple_message(self):
+        data = ("1024\n"
+                "1024"
+               )
+        res = self.app.post('/', data=data)
+        assert res.status_code == 200
+        records = Record.query.all()
+        assert len(records) == 2
+
 if __name__ == '__main__':
     unittest.main()
