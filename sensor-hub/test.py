@@ -12,11 +12,6 @@ class HubTest(unittest.TestCase):
         self.db.drop_all()
         self.db.create_all()
 
-    def test_hub(self):
-        res = self.app.get('/')
-        data = res.data.decode('utf-8')
-        assert data == 'ok'
-
     def test_create_record(self):
         record = Record(1024)
         self.db.session.add(record)

@@ -14,7 +14,7 @@ class Record(db.Model):
     def __init__(self, value):
         self.value = value
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['POST'])
 def hub():
     data = request.data
     record = Record(data)
