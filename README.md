@@ -1,3 +1,3 @@
 # My IOT scripts
 
-Developped on a Pine64 board and deployed on Raspberry pi.
+Various scripts for Raspberry Pi and Arduino to collect data from sensors, control lighting systems etc.
