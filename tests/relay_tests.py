@@ -1,7 +1,7 @@
 import sys
 import unittest
 
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 # Mock external library, not wrapper
 sys.modules['dht11'] = Mock()
