@@ -15,12 +15,12 @@ class Record(db.Model):
         self.value = value
 
 @app.route('/', methods=['GET', 'POST'])
-def hello_world():
+def hub():
     data = request.data
     record = Record(data)
     db.session.add(record)
     db.session.commit()
-    return 'Hello World!'
+    return 'ok'
 
 if __name__ == '__main__':
     app.run()
