@@ -1,7 +1,5 @@
-import os
 from app import app, db, Record
 import unittest
-import tempfile
 
 
 class HubTest(unittest.TestCase):

@@ -30,8 +30,8 @@ def hub():
     records = data.decode('utf-8').split('\n')
     for val in records:
         record = Record(val)
-        db.session.add(record)
-        db.session.commit()
+        db_session.add(record)
+        db_session.commit()
     return 'ok'
 
 

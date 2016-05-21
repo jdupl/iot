@@ -33,10 +33,10 @@ void loop() {
 bool update() {
     if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\",80", "OK", 5000))
         return false;
+    String content = "1024";
+    String request = "POST / HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
 
-    String request = "GET / HTTP/1.1\r\n";
     int reqLength = request.length() + 2; // add 2 because \r\n will be appended by SoftwareSerial.println().
-
     if (!execOnESP("AT+CIPSEND=" + String(reqLength) , "OK", 10000))
         return false;
 
