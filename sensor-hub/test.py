@@ -3,6 +3,7 @@ from app import app, db, Record
 import unittest
 import tempfile
 
+
 class HubTest(unittest.TestCase):
 
     def setUp(self):
@@ -27,8 +28,7 @@ class HubTest(unittest.TestCase):
 
     def test_multiple_message(self):
         data = ("1024\n"
-                "1024"
-               )
+                "1024")
         res = self.app.post('/', data=data)
         assert res.status_code == 200
         records = Record.query.all()
