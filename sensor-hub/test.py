@@ -1,20 +1,23 @@
-from app import app, db, Record
+import os
 import unittest
+
+from app import app, db_session, Record, setup
 
 
 class HubTest(unittest.TestCase):
 
     def setUp(self):
+        setup('test')
         self.app = app.test_client()
-        self.db = db
-        self.db.session.close()
-        self.db.drop_all()
-        self.db.create_all()
+        db_session.close()
+
+    def tearDown(self):
+        os.remove('/tmp/test.db')
 
     def test_create_record(self):
         record = Record(1024)
-        self.db.session.add(record)
-        self.db.session.commit()
+        db_session.add(record)
+        db_session.commit()
         records = Record.query.all()
         assert len(records) == 1
 

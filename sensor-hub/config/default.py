@@ -1,2 +1,2 @@
 DEBUG = True
-DATABASE_URI = 'sqlite:////tmp/test.db'
+DATABASE_URI = 'sqlite:////tmp/dev.db'

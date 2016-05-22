@@ -14,6 +14,6 @@ def init_engine(uri):
     return engine
 
 
-def init_db():
+def init_db(Base):
     global engine
-    metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
