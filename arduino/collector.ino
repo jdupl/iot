@@ -6,6 +6,10 @@ SoftwareSerial softSerial(11, 10); // RX, TX
 String SSID = "wifi SSID";
 String password = "wifi password";
 String serverIp = "(HTTP) Server ip or name";
+String serverPort = "5000";
+
+int sensor = 5;
+
 
 bool execOnESP(String cmd, String expectedRes, unsigned long timeout) {
     unsigned long tExpire = millis() + timeout;
@@ -47,16 +51,17 @@ void setup() {
 }
 
 bool update() {
-    if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\",80", "OK", 5000))
+    if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\"," + serverPort + "", "OK", 5000))
         return false;
-    String content = "1024";
+    int val = analogRead(sensor);
+    String content = (String) val;
     String request = "POST / HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
 
     int reqLength = request.length() + 2; // add 2 because \r\n will be appended by SoftwareSerial.println().
     if (!execOnESP("AT+CIPSEND=" + String(reqLength) , "OK", 10000))
         return false;
 
-    if (!execOnESP(request, "+IPD" , 15000))
+    if (!execOnESP(request, "ok" , 15000))
         return false;
 }
 

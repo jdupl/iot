@@ -1,3 +1,5 @@
+import sys
+
 from flask import Flask, request
 from sqlalchemy import Column, Integer
 from sqlalchemy.ext.declarative import declarative_base
@@ -32,16 +34,22 @@ def hub():
     return 'ok'
 
 
-def setup(env):
+def setup(env=None):
     app.config.from_pyfile('config/default.py')
     app.config.from_pyfile('config/%s.py' % env, silent=True)
 
     init_engine(app.config['DATABASE_URI'])
     init_db(Base)
 
-    if env != 'test':
-        app.run()
+    if env == 'test':
+        return
+
+    host = None
+    if app.config.get('HOST'):
+        host = app.config['HOST']
+
+    app.run(host)
 
 
 if __name__ == '__main__':
-    setup('dev')
+    setup(sys.argv[1] if len(sys.argv) > 1 else None)
