@@ -11,8 +11,10 @@ String serverPort = "5000";
 int sensor = 5;
 
 
-const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
-byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
+const int NTP_PACKET_SIZE = 48;
+byte packetBuffer[NTP_PACKET_SIZE];
+unsigned long epoch = 0;
+unsigned long epoch_mesured_at = 0;
 
 
 bool poolNTP(unsigned long timeout) {
@@ -31,6 +33,7 @@ bool poolNTP(unsigned long timeout) {
     packetBuffer[15]  = 52;
 
     softSerial.write(packetBuffer, NTP_PACKET_SIZE);
+
     memset(packetBuffer, 0, NTP_PACKET_SIZE);
     bool inResPacket = false;
     char c = ' ';
@@ -66,8 +69,8 @@ bool execOnESP(String cmd, String expectedRes, unsigned long timeout) {
     return false;
 }
 
-bool updateTime() {
-    // Based on https://www.arduino.cc/en/Tutorial/UdpNTPClient
+bool setEpoch() {
+    epoch_mesured_at = millis();
 
     if (!execOnESP("AT+CIPSTART=\"UDP\",\"129.6.15.28\",123", "OK", 5000))
         return false;
@@ -80,18 +83,24 @@ bool updateTime() {
 
     unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
     unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
+
     // combine the four bytes (two words) into a long integer
-    unsigned long epoch = (highWord << 16 | lowWord) - 2208988800UL;
-
-    Serial.println(epoch);
-
+    epoch = (highWord << 16 | lowWord) - 2208988800UL;
     return true;
 }
 
-void reset() {
-    execOnESP("AT+RST", "ready", 20000);
-    execOnESP("AT+CWMODE=1", "OK", 5000);
+bool connectWifi() {
+    return execOnESP("AT+CWMODE=1", "OK", 5000) &&
     execOnESP("AT+CWJAP=\"" + SSID + "\",\"" + password + "\"", "OK" , 15000);
+}
+
+void resetESP() {
+    execOnESP("AT+RST", "ready", 20000);
+    connectWifi();
+}
+
+unsigned long getEpoch() {
+    return epoch - epoch_mesured_at + millis();
 }
 
 void setup() {
@@ -105,31 +114,38 @@ void setup() {
     softSerial.begin(9600);
     delay(1000);
 
-    execOnESP("AT+CWMODE=1", "OK", 5000);
-    execOnESP("AT+CWJAP=\"" + SSID + "\",\"" + password + "\"", "OK" , 15000);
+    connectWifi();
+
+    while(!setEpoch()) {
+        delay(30000);
+        // TODO only reset if wifi is offline
+        resetESP();
+    }
 }
 
 bool update() {
-    return updateTime();
-    // if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\"," + serverPort + "", "OK", 5000))
-    //     return false;
-    // int val = analogRead(sensor);
-    // String content = (String) val;
-    // String request = "POST / HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
-    //
-    // int reqLength = request.length() + 2; // add 2 because \r\n will be appended by SoftwareSerial.println().
-    // if (!execOnESP("AT+CIPSEND=" + String(reqLength) , "OK", 10000))
-    //     return false;
-    //
-    // if (!execOnESP(request, "OK" , 15000))
-    //     return false;
-    // if (!execOnESP("AT+CIPCLOSE", "OK", 10000))
-    //     return false;
+    if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\"," + serverPort + "", "OK", 5000))
+        return false;
+    int val = analogRead(sensor);
+    String content = (String) val;
+    String request = "POST / HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
+
+    int reqLength = request.length() + 2; // add 2 because \r\n will be appended by SoftwareSerial.println().
+    if (!execOnESP("AT+CIPSEND=" + String(reqLength) , "OK", 10000))
+        return false;
+
+    if (!execOnESP(request, "OK" , 15000))
+        return false;
+    if (!execOnESP("AT+CIPCLOSE", "OK", 10000))
+        return false;
+    return true;
 }
 
 void loop() {
-    if (!update()) {
-        reset();
-    }
+    unsigned long a = getEpoch();
+    Serial.println(a);
+    // if (!update()) {
+    //     resetESP();
+    // }
     delay(5000);
 }
