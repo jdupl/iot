@@ -16,22 +16,24 @@ class Record(Base):
     query = db_session.query_property()
 
     id = Column(Integer, primary_key=True)
+    timestamp = Column(Integer)
     value = Column(Integer)
 
-    def __init__(self, value):
+    def __init__(self, timestamp, value):
+        self.timestamp = timestamp
         self.value = value
 
 
 @app.route('/', methods=['POST'])
 def hub():
-    data = request.data
-    records = data.decode('utf-8').split('\n')
+    try:
+        for r in request.data.decode('utf-8').split('\n'):
+            db_session.add(Record(*r.split(',')))
+            db_session.commit()
 
-    for val in records:
-        record = Record(val)
-        db_session.add(record)
-        db_session.commit()
-    return 'ok'
+        return 'ok', 200
+    except Exception:
+        return 'not good', 400
 
 
 def setup(env=None):
@@ -44,11 +46,7 @@ def setup(env=None):
     if env == 'test':
         return
 
-    host = None
-    if app.config.get('HOST'):
-        host = app.config['HOST']
-
-    app.run(host)
+    app.run(app.config.get('HOST'))
 
 
 if __name__ == '__main__':

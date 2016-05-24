@@ -13,7 +13,7 @@ int sensor = 5;
 
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
-unsigned long epoch = 0;
+unsigned long epoch_init = 0;
 unsigned long epoch_mesured_at = 0;
 
 
@@ -65,7 +65,7 @@ bool execOnESP(String cmd, String expectedRes, unsigned long timeout) {
             }
         }
     }
-    // Serial.println(response);
+    Serial.println(response);
     return false;
 }
 
@@ -85,7 +85,7 @@ bool setEpoch() {
     unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
 
     // combine the four bytes (two words) into a long integer
-    epoch = (highWord << 16 | lowWord) - 2208988800UL;
+    epoch_init = (highWord << 16 | lowWord) - 2208988800UL;
     return true;
 }
 
@@ -95,12 +95,14 @@ bool connectWifi() {
 }
 
 void resetESP() {
+    delay(2000);
     execOnESP("AT+RST", "ready", 20000);
+    delay(1000);
     connectWifi();
 }
 
 unsigned long getEpoch() {
-    return epoch - epoch_mesured_at + millis();
+    return epoch_init - epoch_mesured_at + millis();
 }
 
 void setup() {
@@ -127,15 +129,16 @@ bool update() {
     if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\"," + serverPort + "", "OK", 5000))
         return false;
     int val = analogRead(sensor);
-    String content = (String) val;
+    String content =  ((String) getEpoch()) + "," + val;
     String request = "POST / HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
 
     int reqLength = request.length() + 2; // add 2 because \r\n will be appended by SoftwareSerial.println().
     if (!execOnESP("AT+CIPSEND=" + String(reqLength) , "OK", 10000))
         return false;
 
-    if (!execOnESP(request, "OK" , 15000))
+    if (!execOnESP(request, "200 OK" , 15000))
         return false;
+    delay(1000);
     if (!execOnESP("AT+CIPCLOSE", "OK", 10000))
         return false;
     return true;
@@ -144,8 +147,8 @@ bool update() {
 void loop() {
     unsigned long a = getEpoch();
     Serial.println(a);
-    // if (!update()) {
-    //     resetESP();
-    // }
+    if (!update()) {
+        resetESP();
+    }
     delay(5000);
 }
