@@ -8,13 +8,15 @@ String password = "wifi password";
 String serverIp = "(HTTP) Server ip or name";
 String serverPort = "5000";
 
+unsigned long updateDelay = 30; // Update every 30sec
 int sensor = 5;
 
 
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
-unsigned long epoch_init = 0;
-unsigned long epoch_mesured_at = 0;
+unsigned long epochInit = 0;
+unsigned long epochMesuredAt = 0;
+unsigned long lastSuccessUpdate = 0;
 
 
 bool poolNTP(unsigned long timeout) {
@@ -65,12 +67,12 @@ bool execOnESP(String cmd, String expectedRes, unsigned long timeout) {
             }
         }
     }
-    Serial.println(response);
+    // Serial.println("Unexpected: " + response);
     return false;
 }
 
 bool setEpoch() {
-    epoch_mesured_at = millis();
+    epochMesuredAt = millis();
 
     if (!execOnESP("AT+CIPSTART=\"UDP\",\"129.6.15.28\",123", "OK", 5000))
         return false;
@@ -85,7 +87,7 @@ bool setEpoch() {
     unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
 
     // combine the four bytes (two words) into a long integer
-    epoch_init = (highWord << 16 | lowWord) - 2208988800UL;
+    epochInit = (highWord << 16 | lowWord) - 2208988800UL;
     return true;
 }
 
@@ -102,7 +104,46 @@ void resetESP() {
 }
 
 unsigned long getEpoch() {
-    return epoch_init - epoch_mesured_at + millis();
+    return epochInit - (epochMesuredAt + millis()) / 1000;
+}
+
+bool update() {
+    int val = analogRead(sensor);
+    String content =  ((String) getEpoch()) + "," + val;
+    String request = "POST / HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
+
+    if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\"," + serverPort + "", "OK", 5000))
+        return false;
+
+    int reqLength = request.length() + 2; // add 2 because \r\n will be appended by SoftwareSerial.println().
+    if (!execOnESP("AT+CIPSEND=" + String(reqLength) , "OK", 10000)) {
+        return false;
+    }
+
+    if (!execOnESP(request, "200 OK" , 15000)) {
+        return false;
+    }
+
+    delay(1000);
+    if (!execOnESP("AT+CIPCLOSE", "OK", 10000))
+        return false;
+
+    lastSuccessUpdate = getEpoch();
+    return true;
+}
+
+bool updateWithRetries(int maxTries) {
+    int tries = 0;
+    bool success = false;
+
+    while (!success && tries++ < maxTries) {
+        success = update();
+        if (!success) {
+            Serial.println(tries);
+            delay(2000);
+        }
+    }
+    return success;
 }
 
 void setup() {
@@ -125,30 +166,11 @@ void setup() {
     }
 }
 
-bool update() {
-    if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\"," + serverPort + "", "OK", 5000))
-        return false;
-    int val = analogRead(sensor);
-    String content =  ((String) getEpoch()) + "," + val;
-    String request = "POST / HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
-
-    int reqLength = request.length() + 2; // add 2 because \r\n will be appended by SoftwareSerial.println().
-    if (!execOnESP("AT+CIPSEND=" + String(reqLength) , "OK", 10000))
-        return false;
-
-    if (!execOnESP(request, "200 OK" , 15000))
-        return false;
-    delay(1000);
-    if (!execOnESP("AT+CIPCLOSE", "OK", 10000))
-        return false;
-    return true;
-}
-
 void loop() {
-    unsigned long a = getEpoch();
-    Serial.println(a);
-    if (!update()) {
-        resetESP();
+    if (!updateWithRetries(5)) {
+        return resetESP();
     }
-    delay(5000);
+
+    nextUpdate = lastSuccessUpdate + updateRate;
+    delay((nextUpdate - getEpoch()) * 1000);
 }
