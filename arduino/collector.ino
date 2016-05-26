@@ -118,6 +118,7 @@ String buildRequestContent() {
 }
 
 bool update() {
+    unsigned long measuredAt = getEpoch();
     String content = buildRequestContent();
     String request = "POST / HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
 
@@ -132,11 +133,11 @@ bool update() {
     if (!execOnESP(request, "200 OK" , 15000)) {
         return false;
     }
+    lastSuccessUpdate = measuredAt;
 
     delay(1000);
     softSerial.println("AT+CIPCLOSE");
 
-    lastSuccessUpdate = getEpoch();
     return true;
 }
 
