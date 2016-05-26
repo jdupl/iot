@@ -1,0 +1,15 @@
+[Unit]
+Description=Sensor data storing service
+After=syslog.target
+
+[Service]
+Type=simple
+User=iot
+Group=iot
+
+ExecStart=/usr/bin/uwsgi /home/iot/iot/sensor-hub/sensor-hub.ini
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
