@@ -55,11 +55,5 @@ def setup(env=None):
     init_engine(app.config['DATABASE_URI'])
     init_db(Base)
 
-    if env == 'test':
-        return
-
-    app.run(app.config.get('HOST'))
-
-
 if __name__ == '__main__':
-    setup(sys.argv[1] if len(sys.argv) > 1 else None)
+    setup(sys.argv[1] if len(sys.argv) > 1 else None).run()
