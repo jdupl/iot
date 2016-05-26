@@ -9,7 +9,7 @@ String serverIp = "(HTTP) Server ip or name";
 String serverPort = "5000";
 
 unsigned long updateDelay = 30; // Update every 30sec
-int sensor = 5;
+int sensorPins[] = {7, 6, 5};
 const int RED_LED_PIN = 5;
 const int GREEN_LED_PIN = 6;
 
@@ -108,12 +108,19 @@ unsigned long getEpoch() {
     return epochInit + (millis() - epochMesuredAt) / 1000;
 }
 
+String buildRequestContent() {
+    String content =  ((String) getEpoch());
+    for (int i = 0; i < sizeof(sensorPins) / sizeof(int); i++) {
+        content += ',' + (String) sensorPins[i] + ':' + String(analogRead(sensorPins[i]));
+    }
+    return content;
+}
+
 bool update() {
-    int val = analogRead(sensor);
-    String content =  ((String) getEpoch()) + "," + val;
+    String content = buildRequestContent();
     String request = "POST / HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
 
-    if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\"," + serverPort + "", "OK", 5000))
+    if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\"," + serverPort, "OK", 5000))
         return false;
 
     int reqLength = request.length() + 2; // add 2 because \r\n will be appended by SoftwareSerial.println().

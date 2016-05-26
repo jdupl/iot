@@ -17,23 +17,35 @@ class Record(Base):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(Integer)
+    pin_num = Column(Integer)
     value = Column(Integer)
 
-    def __init__(self, timestamp, value):
+    def __init__(self, pin_num, value, timestamp=None):
         self.timestamp = timestamp
         self.value = value
+        self.pin_num = pin_num
+
+
+def __bad_request():
+    return 'not good', 400
 
 
 @app.route('/', methods=['POST'])
 def hub():
     try:
-        for r in request.data.decode('utf-8').split('\n'):
-            db_session.add(Record(*r.split(',')))
-            db_session.commit()
+        for timestamp_line in request.data.decode('utf-8').split('\n'):
+            pieces = timestamp_line.split(',')
+            if len(pieces) < 2:
+                return __bad_request()
+
+            timestamp = pieces[0]
+            for piece in pieces[1:]:
+                db_session.add(Record(*(piece).split(':'), timestamp=timestamp))
+                db_session.commit()
 
         return 'ok', 200
     except Exception:
-        return 'not good', 400
+        return __bad_request()
 
 
 def setup(env=None):
