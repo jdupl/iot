@@ -54,6 +54,7 @@ def setup(env=None):
 
     init_engine(app.config['DATABASE_URI'])
     init_db(Base)
+    return app
 
 if __name__ == '__main__':
     setup(sys.argv[1] if len(sys.argv) > 1 else None).run()

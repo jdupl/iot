@@ -3,10 +3,15 @@
 
 SoftwareSerial softSerial(11, 10); // RX, TX
 
-String SSID = "wifi SSID";
-String password = "wifi password";
-String serverIp = "(HTTP) Server ip or name";
-String serverPort = "5000";
+// String SSID = "wifi SSID";
+// String password = "wifi password";
+// String serverIp = "(HTTP) Server ip or name";
+// String serverPort = "5000";
+
+String SSID = "dick(richard)";
+String password = "1337justin";
+String serverIp = "192.168.0.136";
+String serverPort = "9090";
 
 unsigned long updateDelay = 30; // Update every 30sec
 int sensorPins[] = {7, 6, 5};
