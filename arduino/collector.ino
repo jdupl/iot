@@ -55,6 +55,7 @@ bool poolNTP(unsigned long timeout) {
 bool execOnESP(String cmd, String expectedRes, unsigned long timeout) {
     unsigned long tExpire = millis() + timeout;
     String response = "";
+    softSerial.flush();
 
     softSerial.println(cmd);
 
@@ -73,7 +74,7 @@ bool execOnESP(String cmd, String expectedRes, unsigned long timeout) {
 }
 
 bool setEpoch() {
-    epochMesuredAt = millis();
+    epochMesuredAt = millis() / 1000;
 
     if (!execOnESP("AT+CIPSTART=\"UDP\",\"0.ca.pool.ntp.org\",123", "OK", 5000))
         return false;
@@ -105,7 +106,7 @@ void resetESP() {
 }
 
 unsigned long getEpoch() {
-    return epochInit + (millis() - epochMesuredAt) / 1000;
+    return epochInit + (millis() / 1000 - epochMesuredAt);
 }
 
 String buildRequestContent() {
@@ -133,8 +134,7 @@ bool update() {
     }
 
     delay(1000);
-    if (!execOnESP("AT+CIPCLOSE", "OK", 10000))
-        return false;
+    softSerial.println("AT+CIPCLOSE");
 
     lastSuccessUpdate = getEpoch();
     return true;
@@ -147,7 +147,6 @@ bool updateWithRetries(int maxTries) {
     while (!success && tries++ < maxTries) {
         success = update();
         if (!success) {
-            Serial.println(tries);
             delay(2000);
         }
     }
