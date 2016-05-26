@@ -10,7 +10,8 @@ String serverPort = "5000";
 
 unsigned long updateDelay = 30; // Update every 30sec
 int sensor = 5;
-
+const int RED_LED_PIN = 5;
+const int GREEN_LED_PIN = 6;
 
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
@@ -74,7 +75,7 @@ bool execOnESP(String cmd, String expectedRes, unsigned long timeout) {
 bool setEpoch() {
     epochMesuredAt = millis();
 
-    if (!execOnESP("AT+CIPSTART=\"UDP\",\"129.6.15.28\",123", "OK", 5000))
+    if (!execOnESP("AT+CIPSTART=\"UDP\",\"0.ca.pool.ntp.org\",123", "OK", 5000))
         return false;
     if (!execOnESP("AT+CIPSEND=48", "OK", 5000))
         return false;
@@ -104,7 +105,7 @@ void resetESP() {
 }
 
 unsigned long getEpoch() {
-    return epochInit - (epochMesuredAt + millis()) / 1000;
+    return epochInit + (millis() - epochMesuredAt) / 1000;
 }
 
 bool update() {
@@ -147,6 +148,9 @@ bool updateWithRetries(int maxTries) {
 }
 
 void setup() {
+    pinMode(RED_LED_PIN, OUTPUT);
+    pinMode(GREEN_LED_PIN, OUTPUT);
+    digitalWrite(RED_LED_PIN, 1);
     Serial.begin(9600);
     softSerial.begin(115200);
     delay(1000);
@@ -164,13 +168,15 @@ void setup() {
         // TODO only reset if wifi is offline
         resetESP();
     }
+    digitalWrite(RED_LED_PIN, 0);
 }
 
 void loop() {
+    digitalWrite(GREEN_LED_PIN, 1);
     if (!updateWithRetries(5)) {
         return resetESP();
     }
 
-    nextUpdate = lastSuccessUpdate + updateRate;
+    unsigned long nextUpdate = lastSuccessUpdate + updateDelay;
     delay((nextUpdate - getEpoch()) * 1000);
 }
