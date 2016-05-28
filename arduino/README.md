@@ -1,17 +1,27 @@
 # Plant watcher
 
-Collects soil humidity of plants and sends data to an external server via ESP01.
+Collects data from sensors and sends measurements with NTP timestamp to an external server.
 
 
-### Dependencies
+## Usage
 
-`sudo apt-get install arduino-mk`
+Connect sensors to analog pins and modifiy collector.ino to your pins (Wi-Fi and sensors) and SSID information.
+
+## LED status
+
+Two leds can be pluged-in to view status. Change RED_LED_PIN and GREEN_LED_PIN to your hardware configuration.
+
+* No LED: Trying to setup Wi-Fi
+* Red only: Wi-Fi OK
+* Red and green: Wi-Fi and NTP OK
+* Green only: Wi-Fi, NTP and server link OK
 
 
-### Uploading on an Arduino
-
-`make upload`
+## Uploading to an Arduino without IDE
 
 Change the Makefile to your needs:
 
- (`make show_boards` for complete list).
+(`make show_boards` for complete list).
+
+`sudo apt-get install arduino-mk`
+`make upload`
