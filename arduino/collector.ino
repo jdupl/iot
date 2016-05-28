@@ -1,23 +1,18 @@
-// Code is based from http://rootpower.com/?p=73 and adapted for my usage
 #include <SoftwareSerial.h>
 
-SoftwareSerial softSerial(11, 10); // RX, TX
-
-// String SSID = "wifi SSID";
-// String password = "wifi password";
-// String serverIp = "(HTTP) Server ip or name";
-// String serverPort = "5000";
-
-String SSID = "dick(richard)";
-String password = "1337justin";
-String serverIp = "192.168.0.136";
+// Below are configurable variables
+SoftwareSerial softSerial(11, 10); // RX, TX (ESP board)
+String SSID = "wifi SSID";
+String password = "wifi password";
+String serverIp = "(HTTP) Server ip or name"; // sensor-hub
 String serverPort = "9090";
-
-unsigned long updateDelay = 30; // Update every 30sec
-int sensorPins[] = {7, 6, 5};
+unsigned long updateDelay = 600; // Update every 10 minutes
+int sensorPins[] = {7, 6, 5, 4, 3, 2, 1, 0}; // Analog pins to read from
 const int RED_LED_PIN = 5;
 const int GREEN_LED_PIN = 6;
 
+
+// Configuration stops right above !
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
 unsigned long epochInit = 0;
@@ -46,7 +41,7 @@ bool poolNTP(unsigned long timeout) {
     bool inResPacket = false;
     char c = ' ';
 
-    while (millis() < tExpire && i < 48) {
+    while (millis() < tExpire && i < NTP_PACKET_SIZE) {
         c = softSerial.read();
         if (inResPacket && c != -1) {
             packetBuffer[i++] = c;
@@ -54,7 +49,7 @@ bool poolNTP(unsigned long timeout) {
             inResPacket = true;
         }
     }
-    return i == 48;
+    return i == NTP_PACKET_SIZE;
 }
 
 bool execOnESP(String cmd, String expectedRes, unsigned long timeout) {
@@ -104,10 +99,22 @@ bool connectWifi() {
 }
 
 void resetESP() {
+    // Everything is broken so turn off leds
+    digitalWrite(GREEN_LED_PIN, 0);
+    digitalWrite(RED_LED_PIN, 0);
+
     delay(2000);
     execOnESP("AT+RST", "ready", 20000);
     delay(1000);
-    connectWifi();
+
+    if (connectWifi()) {
+        digitalWrite(RED_LED_PIN, 1);
+
+        if (epochInit != 0) {
+            // Epoch is set
+            digitalWrite(GREEN_LED_PIN, 1);
+        }
+    }
 }
 
 unsigned long getEpoch() {
@@ -152,7 +159,13 @@ bool updateWithRetries(int maxTries) {
 
     while (!success && tries++ < maxTries) {
         success = update();
+
         if (!success) {
+            if (tries > maxTries / 2) {
+                digitalWrite(RED_LED_PIN, 1); // Server link down
+                delay(5000); // Delay a bit more
+            }
+
             delay(2000);
         }
     }
@@ -162,7 +175,7 @@ bool updateWithRetries(int maxTries) {
 void setup() {
     pinMode(RED_LED_PIN, OUTPUT);
     pinMode(GREEN_LED_PIN, OUTPUT);
-    digitalWrite(RED_LED_PIN, 1);
+
     Serial.begin(9600);
     softSerial.begin(115200);
     delay(1000);
@@ -172,22 +185,31 @@ void setup() {
 
     softSerial.begin(9600);
     delay(1000);
+    connect();
+}
 
-    connectWifi();
+void connect() {
+    while (!connectWifi()) {
+        delay(10000);
+    }
+    digitalWrite(RED_LED_PIN, 1); // Wi-Fi OK (only red led on)
 
     while(!setEpoch()) {
         delay(30000);
         // TODO only reset if wifi is offline
         resetESP();
     }
-    digitalWrite(RED_LED_PIN, 0);
+    digitalWrite(RED_LED_PIN, 1); // Wi-Fi + NTP OK (both leds on)
 }
 
 void loop() {
-    digitalWrite(GREEN_LED_PIN, 1);
     if (!updateWithRetries(5)) {
         return resetESP();
     }
+
+    // Server link OK (only green led on)
+    digitalWrite(GREEN_LED_PIN, 1);
+    digitalWrite(RED_LED_PIN, 0);
 
     unsigned long nextUpdate = lastSuccessUpdate + updateDelay;
     delay((nextUpdate - getEpoch()) * 1000);
