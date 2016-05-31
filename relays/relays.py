@@ -1,10 +1,53 @@
 import time
 import datetime as dt
-import RPi.GPIO as GPIO
+
 
 open_time = dt.time(5, 0, 0)
 close_time = dt.time(23, 55, 0)
 light_pins = [23, 24]  # GPIO pins of the relay (BCM)
+
+GPIO = None
+
+
+class Schedule():
+    """Represents open and close events for relay pins."""
+    def __init__(self, pins, open_times, close_times):
+        self.pins = pins
+        self.open_times = open_times
+        self.close_times = close_times
+
+    def get_future_events(self, now=dt.datetime.now()):
+        return self._get_events(True, now)
+
+    def get_past_events(self, now=dt.datetime.now()):
+        return self._get_events(False, now)
+
+    def _get_events(self, future, now):
+        delta = 1 if future else -1
+
+        events = self._build_events(future, delta, 'on', self.open_times, now)
+        events += self._build_events(future, delta, 'off',
+                                     self.close_times, now)
+        return events
+
+    def _build_events(self, future, delta, status, time_array, now):
+        events = []
+
+        for i, t in enumerate(time_array):
+            event_time = now.replace(hour=t.hour, minute=t.minute,
+                                     second=t.second)
+            event = (event_time, status)
+
+            if (future and event_time > now) or \
+               (not future and event_time < now):
+                events.append(event)
+
+            events.append((event_time + dt.timedelta(days=delta), event[1]))
+        return events
+
+
+def load_config():
+    return True
 
 
 def get_events(time_array, future):
@@ -74,6 +117,7 @@ def control_lights():
         time.sleep(sleep_until)
 
 if __name__ == '__main__':
+    import RPi.GPIO as GPIO
     try:
         control_lights()
     except KeyboardInterrupt:
