@@ -4,6 +4,11 @@ import datetime as dt
 GPIO = None
 
 
+def time_to_datetime(t, datetime_base):
+    return datetime_base.replace(hour=t.hour, minute=t.minute,
+                                 second=t.second)
+
+
 class Schedule():
     """Represents open and close events for relay pins."""
 
@@ -13,69 +18,50 @@ class Schedule():
         self.open_times = open_times
         self.close_times = close_times
 
-    def get_latest_event(self, now=dt.datetime.now()):
-        past = sorted(self._get_past_events(now), reverse=True)
-        return past[0]
+    def get_latest_event(self, now):
+        open_event = self._get_latest_event(self.open_times, 'on')
+        close_event = self._get_latest_event(self.close_times, 'off')
 
-    def get_next_event(self, now=dt.datetime.now()):
-        future = sorted(self._get_future_events(now))
-        return future[0]
+        if open_event > close_event:
+            return open_event
+        return close_event
 
-    def _get_future_events(self, now):
-        return self._get_events(True, now)
+    def _get_latest_event(self, times, status):
+        now = dt.datetime.now()
+        first_time_today = time_to_datetime(times[0], now)
 
-    def _get_past_events(self, now):
-        return self._get_events(False, now)
+        if now < first_time_today:
+            yesterday = now + dt.timedelta(days=-1)
+            yesterday_t = time_to_datetime(times[-1], yesterday)
+            return (yesterday_t, status)
+        else:
+            for schedule_t in times:
+                today_t = time_to_datetime(schedule_t, now)
+                if now > today_t:
+                    return (today_t, status)
 
-    def _get_events(self, future, now):
-        delta = 1 if future else -1
+    def get_next_event(self, now):
+        open_event = self._get_next_event(self.open_times, 'on')
+        close_event = self._get_next_event(self.close_times, 'off')
 
-        events = self._build_events(future, delta, 'on', self.open_times, now)
-        events += self._build_events(future, delta, 'off',
-                                     self.close_times, now)
-        return events
+        if open_event < close_event:
+            return open_event
+        return close_event
 
-    def _build_events(self, future, delta, status, time_array, now):
-        events = []
+    def _get_next_event(self, times, status):
+        now = dt.datetime.now()
+        last_time_today = time_to_datetime(times[-1], now)
 
-        for i, t in enumerate(time_array):
-            event_time = now.replace(hour=t.hour, minute=t.minute,
-                                     second=t.second)
-            event = (event_time, status)
+        if now < last_time_today:
+            for schedule_t in times:
+                today_t = time_to_datetime(schedule_t, now)
 
-            if (future and event_time > now) or \
-               (not future and event_time < now):
-                events.append(event)
-
-            events.append((event_time + dt.timedelta(days=delta), event[1]))
-        return events
-
-
-def get_events(time_array, future):
-    events = []
-    now = dt.datetime.now()
-    delta = 1 if future else -1
-
-    for i, t in enumerate(time_array):
-        event_time = now.replace(hour=t.hour, minute=t.minute,
-                                 second=t.second)
-        event = (event_time, 'on' if i == 0 else 'off')
-
-        if (future and event_time > now) or (not future and event_time < now):
-            events.append(event)
-
-        events.append((event_time + dt.timedelta(days=delta), event[1]))
-    return events
-
-
-def get_latest_event(time_array):
-    past = sorted(get_events(time_array, False), reverse=True)
-    return past[0]
-
-
-def get_next_event(time_array):
-    future = sorted(get_events(time_array, True))
-    return future[0]
+                if now < today_t:
+                    return (today_t, status)
+        else:
+            tommorow = now + dt.timedelta(days=1)
+            tommorow_t = time_to_datetime(times[0], tommorow)
+            return (tommorow_t, status)
 
 
 def set_relay(pins, state_str):
@@ -99,7 +85,7 @@ def control_and_sleep(schedules):
     print('Currently %s.' % str(now))
 
     for schedule in schedules:
-        wanted_state = schedule.get_latest_event()[1]
+        wanted_state = schedule.get_latest_event(now)[1]
 
         if schedule.curr_state != wanted_state:
             set_relay(schedule.pins, wanted_state)
