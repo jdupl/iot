@@ -116,5 +116,49 @@ class ScheduleTest(unittest.TestCase):
         self.assertEqual(s.get_next_event(now=now),
                          (dt.datetime(2016, 5, 30, 5, 0), 'on'))
 
+    def test_get_events_from_each(self):
+        # It's 4h
+        now = dt.datetime.fromtimestamp(1464595200)
+        start_times = relays.each(3, start_at=dt.time(3, 59, 0),
+                                  max_iterations=6)
+        close_times = relays.each(3, start_at=dt.time(4, 10, 0),
+                                  max_iterations=6)
+
+        s = Schedule([22], start_times, close_times)
+
+        self.assertEqual(s.get_latest_event(now=now),
+                         (dt.datetime(2016, 5, 30, 3, 59), 'on'))
+
+        self.assertEqual(s.get_next_event(now=now),
+                         (dt.datetime(2016, 5, 30, 4, 10), 'off'))
+
+        # It's 4h11
+        now = dt.datetime.fromtimestamp(1464595860)
+        self.assertEqual(s.get_latest_event(now=now),
+                         (dt.datetime(2016, 5, 30, 4, 10), 'off'))
+
+        self.assertEqual(s.get_next_event(now=now),
+                         (dt.datetime(2016, 5, 30, 6, 59), 'on'))
+
+    def test_get_sleep_for(self):
+        start_times = relays.each(3, start_at=dt.time(3, 59, 0),
+                                  max_iterations=6)
+        close_times = relays.each(3, start_at=dt.time(4, 10, 0),
+                                  max_iterations=6)
+
+        s1 = Schedule([22], start_times, close_times)
+        s2 = Schedule([23, 24], [dt.time(4, 15, 0)], [dt.time(5, 0, 0)])
+
+        # It's 4h00
+        now = dt.datetime.fromtimestamp(1464595200)
+        self.assertEqual(relays.get_sleep_for([s1, s2], now), 600)
+        # It's 4h11
+        now = dt.datetime.fromtimestamp(1464595860)
+        self.assertEqual(relays.get_sleep_for([s1, s2], now), 240)
+
+        # It's 4h11
+        now = dt.datetime.fromtimestamp(1464595860)
+        self.assertEqual(relays.get_sleep_for([s1, s2], now), 240)
+
 if __name__ == '__main__':
     unittest.main()

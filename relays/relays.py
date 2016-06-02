@@ -105,11 +105,21 @@ def control_and_sleep(schedules):
             set_relay(schedule.pins, wanted_state)
             schedule.curr_state = wanted_state
 
-        next_event = schedule.get_next_event()[0]
+    next_change_in = get_sleep_for(schedules, dt.datetime.now())
 
-    next_change_in = (next_event - now).total_seconds()
     print('Next_change_in %s' % next_change_in)
     time.sleep(next_change_in)
+
+
+def get_sleep_for(schedules, now):
+    next_event = None
+
+    for schedule in schedules:
+        schedule_next_event = schedule.get_next_event(now)[0]
+        if not next_event or schedule_next_event < next_event:
+            next_event = schedule_next_event
+
+    return (next_event - now).total_seconds()
 
 
 def control_relays(schedules):
