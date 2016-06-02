@@ -7,9 +7,8 @@ GPIO = None
 class Schedule():
     """Represents open and close events for relay pins."""
 
-    __curr_state = 'off'
-
     def __init__(self, pins, open_times, close_times):
+        self.__curr_state = 'off'
         self.pins = pins
         self.open_times = open_times
         self.close_times = close_times
