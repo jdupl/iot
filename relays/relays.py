@@ -123,7 +123,7 @@ def control_relays(schedules):
     setup_light_pins(light_pins)
 
     while True:
-        control_and_sleep()
+        control_and_sleep(schedules)
         time.sleep(1)  # Overflow next schedule
 
 
