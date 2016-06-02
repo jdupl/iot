@@ -88,9 +88,9 @@ def set_relay(pins, state_str):
             GPIO.output(pin, gpio_val)
 
 
-def setup_light_pins(pins):
+def setup_pins(pins):
     for pin in pins:
-        # Lights are off
+        # Off
         GPIO.setup(pin, GPIO.OUT, initial=1)
 
 
@@ -115,7 +115,9 @@ def control_and_sleep(schedules):
 def control_relays(schedules):
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
-    setup_light_pins(light_pins)
+
+    for schedule in schedules:
+        setup_pins(schedule.pins)
 
     while True:
         control_and_sleep(schedules)
