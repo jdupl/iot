@@ -8,12 +8,11 @@ from relays import Schedule
 class UtilsTest(unittest.TestCase):
 
     def test_each(self):
-        fan_schedule = Schedule([22],
-                                relays.each(1, start_at=dt.time(5, 30, 0)),
-                                relays.each(3, start_at=dt.time(6, 0, 0)))
-        print(fan_schedule.get_next_event())
-
-        # self.assertEqual(fan_schedule.get_next_event())
+        times = relays.each(3, start_at=dt.time(3, 59, 0))
+        self.assertEqual(times, [dt.time(3, 59, 0), dt.time(6, 59, 0),
+                                 dt.time(9, 59, 0), dt.time(12, 59, 0),
+                                 dt.time(15, 59, 0), dt.time(18, 59, 0),
+                                 dt.time(21, 59, 0)])
 
 
 class ScheduleTest(unittest.TestCase):

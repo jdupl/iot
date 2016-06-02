@@ -129,22 +129,24 @@ def control_relays(schedules):
 
 def each(hours, start_at=dt.time(0, 0, 0), max_iterations=24):
     times = []
-
     time = start_at
-    while time.hour + (hours) * (len(times) + 1) < 24 and \
+    t_hour = time.hour
+
+    while t_hour < 24 and \
             (max_iterations > 0 and max_iterations > len(times)):
-        t = dt.time(time.hour + (hours) * (len(times) + 1), time.minute, time.second)
+        t = dt.time(t_hour, time.minute, time.second)
         times.append(t)
-        print(t)
+        t_hour = time.hour + (hours) * (len(times))
+
     return times
 
 if __name__ == '__main__':
     import RPi.GPIO as GPIO
     try:
-        light_pins = [23, 24]  # GPIO pins of the relay (BCM)
+        light_pins = [23, 24]  # GPIO pins of the lights (BCM)
         light_schedule = Schedule(light_pins,
                                   [dt.time(5, 0, 0)], [dt.time(23, 55, 0)])
-        fan_schedule = Schedule([22],
+        fan_schedule = Schedule([22],  # GPIO pins of the fans (BCM)
                                 each(3, start_at=dt.time(5, 30, 0),
                                 max_iterations=6),
                                 each(3, start_at=dt.time(6, 0, 0),
