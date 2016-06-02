@@ -6,7 +6,7 @@ After=syslog.target
 Type=simple
 User=pi
 Group=pi
-ExecStart=python3 /home/pi/iot/relays/lights.py
+ExecStart=python3 /home/pi/iot/relays/relays.py
 StandardOutput=syslog
 StandardError=syslog
 
