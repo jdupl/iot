@@ -6,8 +6,11 @@ String SSID = "wifi SSID";
 String password = "wifi password";
 String serverIp = "(HTTP) Server ip or name"; // sensor-hub
 String serverPort = "9090";
-unsigned long updateDelay = 600; // Update every 10 minutes
+
+unsigned long updateDelay = 1800; // Update every 30 minutes
 int sensorPins[] = {7, 6, 5, 4, 3, 2, 1, 0}; // Analog pins to read from
+// Optionnal
+const int RELAY_PIN = 4; // Open circuit with relay when sensors are not in use to reduce oxidation
 const int RED_LED_PIN = 5;
 const int GREEN_LED_PIN = 6;
 
@@ -131,7 +134,14 @@ String buildRequestContent() {
 
 bool update() {
     unsigned long measuredAt = getEpoch();
+
+    // Close close sensors circuit
+    digitalWrite(RELAY_PIN, 1);
+    delay(1000);
     String content = buildRequestContent();
+    // Open close sensors circuit
+    digitalWrite(RELAY_PIN, 0);
+
     String request = "POST / HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
 
     if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\"," + serverPort, "OK", 5000))
