@@ -27,6 +27,9 @@ class Schedule():
         return close_event
 
     def _get_latest_event(self, times, status):
+        times_reverse = times[:]
+        times_reverse.reverse()
+
         now = dt.datetime.now()
         first_time_today = time_to_datetime(times[0], now)
 
@@ -35,7 +38,7 @@ class Schedule():
             yesterday_t = time_to_datetime(times[-1], yesterday)
             return (yesterday_t, status)
         else:
-            for schedule_t in times:
+            for schedule_t in times_reverse:
                 today_t = time_to_datetime(schedule_t, now)
                 if now > today_t:
                     return (today_t, status)

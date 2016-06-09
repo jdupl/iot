@@ -97,6 +97,22 @@ class ScheduleTest(unittest.TestCase):
             self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
                              (dt.datetime(2016, 5, 30, 4, 30), 'off'))
 
+        with mock_datetime(2016, 5, 30, 6, 1):
+            self.assertEqual(s.get_next_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 6, 30), 'off')
+                             )
+
+            self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 6, 0), 'on'))
+
+        with mock_datetime(2016, 5, 30, 16, 50):
+            self.assertEqual(s.get_next_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 17, 0), 'on')
+                             )
+
+            self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 16, 30), 'off'))
+
 
 if __name__ == '__main__':
     unittest.main()
