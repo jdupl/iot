@@ -143,10 +143,8 @@ if __name__ == '__main__':
         light_schedule = Schedule(light_pins,
                                   [dt.time(5, 0, 0)], [dt.time(23, 55, 0)])
         fan_schedule = Schedule([22],  # GPIO pins of the fans (BCM)
-                                each(3, start_at=dt.time(5, 30, 0),
-                                max_iterations=6),
-                                each(3, start_at=dt.time(6, 0, 0),
-                                max_iterations=6))
+                                each(1, start_at=dt.time(5, 50, 0)),
+                                each(1, start_at=dt.time(5, 55, 0)))
 
         control_relays([light_schedule, fan_schedule])
     except KeyboardInterrupt:
