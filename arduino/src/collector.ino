@@ -1,21 +1,24 @@
 #include <SoftwareSerial.h>
 
-// Below are configurable variables
-SoftwareSerial softSerial(11, 10); // RX, TX (ESP board)
-String SSID = "wifi SSID";
-String password = "wifi password";
-String serverIp = "(HTTP) Server ip or name"; // sensor-hub
-String serverPort = "9090";
+const int espRX = changeme; // esp_board_rx
+const int espTX = changeme; // esp_board_tx
+// RX, TX
+SoftwareSerial softSerial(espRX, espTX);
 
-unsigned long updateDelay = 1800; // Update every 30 minutes
-int sensorPins[] = {7, 6, 5, 4, 3, 2, 1, 0}; // Analog pins to read from
-// Optionnal
-const int RELAY_PIN = 4; // Open circuit with relay when sensors are not in use to reduce oxidation
-const int RED_LED_PIN = 5;
-const int GREEN_LED_PIN = 6;
+const String SSID = "changeme"; // wifi_ssid
+const String password = "changeme"; // wifi_password
 
+const String serverIp = "changeme"; // sensor_hub_ip
+const String serverPort = "changeme"; // sensor_hub_port
 
-// Configuration stops right above !
+const unsigned long updateDelay = changeme; // update_delay
+const int sensorPins[] = {changeme}; // hygrometer_pins
+
+// Open circuit with relay when sensors are not in use to reduce oxidation
+const int RELAY_PIN = changeme; // digital_pins_relay
+const int RED_LED_PIN = changeme; // digital_pins_red_led
+const int GREEN_LED_PIN = changeme; // digital_pins_green_led
+
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
 unsigned long epochInit = 0;

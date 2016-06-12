@@ -63,4 +63,5 @@ target/
 
 
 # Arduino builds
-arduino/build*
+arduino/_build/build*
+arduino/_build/collector.ino
