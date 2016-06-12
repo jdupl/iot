@@ -13,7 +13,6 @@ class Schedule():
     """Represents open and close events for relay pins."""
 
     def __init__(self, pins, open_times, close_times):
-        self.curr_state = 'off'
         self.pins = pins
         self.open_times = open_times
         self.close_times = close_times
@@ -89,10 +88,7 @@ def control_and_sleep(schedules):
 
     for schedule in schedules:
         wanted_state = schedule.get_latest_event(now)[1]
-
-        if schedule.curr_state != wanted_state:
-            set_relay(schedule.pins, wanted_state)
-            schedule.curr_state = wanted_state
+        set_relay(schedule.pins, wanted_state)
 
     next_change_in = get_sleep_for(schedules, dt.datetime.now())
 
