@@ -1,5 +1,7 @@
+import subprocess
 import yaml
 import re
+
 
 def load_cfg(yaml_file):
     config = {}
@@ -12,8 +14,9 @@ def load_cfg(yaml_file):
                 k = '%s_%s' % (node, c)
                 config[k] = yaml_cfg[node][c]
         else:
-            config[node] =  yaml_cfg[node]
+            config[node] = yaml_cfg[node]
     return config
+
 
 def load_src(arduino_src):
     lines = []
@@ -31,15 +34,22 @@ def write_to(build_file, lines):
 
 def set_src(key, value, lines):
     p = re.compile('(changeme).*// %s$' % key)
-    if not lines:
-        print('WAT', k, v)
 
     for i, line in enumerate(lines):
         r = p.search(line)
         if r:
-            l = line.replace('changeme', str(value))
+            if type(value) is list:
+                s = ''
+                for v in value:
+                    s += ', ' + str(v)
+                s = '%s' % (s[2:])
+                l = line.replace('changeme', s)
+            else:
+                l = line.replace('changeme', str(value))
+
             lines[i] = l
             return lines
+
     return False
 
 if __name__ == '__main__':
@@ -54,3 +64,4 @@ if __name__ == '__main__':
 
     with open('_build/collector.ino', 'w') as f:
         f.writelines(src)
+    subprocess.check_call(['make', 'upload'], cwd='_build')

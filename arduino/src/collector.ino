@@ -185,6 +185,20 @@ bool updateWithRetries(int maxTries) {
     return success;
 }
 
+void connect() {
+    while (!connectWifi()) {
+        delay(10000);
+    }
+    digitalWrite(RED_LED_PIN, 1); // Wi-Fi OK (only red led on)
+
+    while(!setEpoch()) {
+        delay(30000);
+        // TODO only reset if wifi is offline
+        resetESP();
+    }
+    digitalWrite(RED_LED_PIN, 1); // Wi-Fi + NTP OK (both leds on)
+}
+
 void setup() {
     pinMode(RED_LED_PIN, OUTPUT);
     pinMode(GREEN_LED_PIN, OUTPUT);
@@ -199,20 +213,6 @@ void setup() {
     softSerial.begin(9600);
     delay(1000);
     connect();
-}
-
-void connect() {
-    while (!connectWifi()) {
-        delay(10000);
-    }
-    digitalWrite(RED_LED_PIN, 1); // Wi-Fi OK (only red led on)
-
-    while(!setEpoch()) {
-        delay(30000);
-        // TODO only reset if wifi is offline
-        resetESP();
-    }
-    digitalWrite(RED_LED_PIN, 1); // Wi-Fi + NTP OK (both leds on)
 }
 
 void loop() {
