@@ -28,10 +28,6 @@ def load_src(arduino_src):
     return lines
 
 
-def write_to(build_file, lines):
-    pass
-
-
 def set_src(key, value, lines):
     p = re.compile('(changeme).*// %s$' % key)
 
