@@ -1,7 +1,7 @@
 import sys
 
-from flask import Flask, request
-from sqlalchemy import Column, Integer
+from flask import Flask, request, jsonify
+from sqlalchemy import Column, Integer, func
 from sqlalchemy.ext.declarative import declarative_base
 
 from database import db_session, init_db, init_engine
@@ -25,13 +25,30 @@ class Record(Base):
         self.value = value
         self.pin_num = pin_num
 
+    def as_pub_dict(self):
+        return {
+            'id': self.id,
+            'timestamp': self.timestamp,
+            'pin_num': self.pin_num,
+            'value': self.value
+            }
+
 
 def __bad_request():
     return 'not good', 400
 
 
-@app.route('/', methods=['POST'])
-def hub():
+@app.route('/api/records/latest', methods=['GET'])
+def get_lastest_records():
+    records = Record.query.group_by(Record.pin_num) \
+        .having(func.max(Record.timestamp)).all()
+
+    return jsonify({'records':
+                   list(map(lambda r: r.as_pub_dict(), records))}), 200
+
+
+@app.route('/api/record', methods=['POST'])
+def add_record():
     try:
         for timestamp_line in request.data.decode('utf-8').split('\n'):
             pieces = timestamp_line.split(',')
