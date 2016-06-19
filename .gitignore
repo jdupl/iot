@@ -65,3 +65,5 @@ target/
 # Arduino builds
 arduino/_build/build*
 arduino/_build/collector.ino
+
+bower_components

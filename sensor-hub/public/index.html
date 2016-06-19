@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IOT garden hub</title>
+    <link href="/bower_components/bootswatch-dist/css/bootstrap.min.css" rel="stylesheet">
+    <base href="/">
+  </head>
+  <body ng-app="app">
+    <div class="wrapper">
+      <div class="container">
+        <h1>IOT garden hub</h1>
+        <div class="body" ng-view autoscroll="true">
+        </div>
+      </div>
+    </div>
+
+    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="/bower_components/angular/angular.min.js"></script>
+    <script src="/bower_components/angular-route/angular-route.min.js"></script>
+    <script src="/bower_components/bootswatch-dist/js/bootstrap.min.js"></script>
+    <script src="/app.js"></script>
+    <script src="/controllers/index.js"></script>
+  </body>
+</html>
