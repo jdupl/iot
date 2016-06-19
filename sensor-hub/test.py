@@ -26,7 +26,7 @@ class HubTest(unittest.TestCase):
         self.assertEqual(records[0].value, 1024)
 
     def test_single_message_single_sensor(self):
-        res = self.app.post('/api/record', data='1464191598,7:1024')
+        res = self.app.post('/api/records', data='1464191598,7:1024')
         assert res.status_code == 200
         records = Record.query.all()
         assert len(records) == 1
@@ -35,7 +35,7 @@ class HubTest(unittest.TestCase):
         self.assertEqual(records[0].value, 1024)
 
     def test_single_message_multiple_sensors(self):
-        res = self.app.post('/api/record', data='1464191598,7:1024,8:768')
+        res = self.app.post('/api/records', data='1464191598,7:1024,8:768')
         assert res.status_code == 200
         records = Record.query.all()
         assert len(records) == 2
@@ -49,14 +49,14 @@ class HubTest(unittest.TestCase):
     def test_multiple_messages(self):
         data = ('1464181598,7:1024\n'
                 '1464191598,6:768,9:512')
-        res = self.app.post('/api/record', data=data)
+        res = self.app.post('/api/records', data=data)
         assert res.status_code == 200
         records = Record.query.all()
         assert len(records) == 3
 
     def test_not_good(self):
         data = ('1024')
-        res = self.app.post('/api/record', data=data)
+        res = self.app.post('/api/records', data=data)
         assert res.status_code == 400
         records = Record.query.all()
         assert len(records) == 0

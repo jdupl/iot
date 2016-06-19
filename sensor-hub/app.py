@@ -47,7 +47,7 @@ def get_lastest_records():
                    list(map(lambda r: r.as_pub_dict(), records))}), 200
 
 
-@app.route('/api/record', methods=['POST'])
+@app.route('/api/records', methods=['POST'])
 def add_record():
     try:
         for timestamp_line in request.data.decode('utf-8').split('\n'):
