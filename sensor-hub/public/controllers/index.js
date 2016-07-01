@@ -1,6 +1,6 @@
 var controllers = angular.module('app.controllers.IndexController', []);
 
-controllers.controller('IndexController', function($scope, $http) {
+controllers.controller('IndexController', function($scope, $http, $interval) {
     $scope.alerts = [];
 
     $scope.closeAlert = function(index) {
@@ -19,7 +19,14 @@ controllers.controller('IndexController', function($scope, $http) {
               console.log(err, status);
           });
     };
-  $scope.refresh();
+
+    $scope.refresh();
+    $scope.intervalPromise = $interval(function() {
+      $scope.refresh();
+    }, 30000);
+    $scope.$on('$destroy', function() {
+      $interval.cancel($scope.intervalPromise);
+    });
 
   function getHeaderForValue(val) {
     if (val > 920) {
