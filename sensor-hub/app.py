@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sys
 
 from flask import Flask, request, jsonify
@@ -31,7 +32,7 @@ class Record(Base):
             'timestamp': self.timestamp,
             'pin_num': self.pin_num,
             'value': self.value
-            }
+        }
 
 
 def __bad_request():

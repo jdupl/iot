@@ -19,8 +19,9 @@
     "tests"
   ],
   "dependencies": {
-    "angular": "~1.4.9",
-    "angular-route": "~1.4.9",
+    "jquery": "1.9.1",
+    "angular": "~1.5.7",
+    "angular-route": "~1.5.7",
     "bootswatch-dist": "simplex",
     "angular-chart.js": "1.0.0-alpha8"
   }

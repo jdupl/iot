@@ -8,9 +8,9 @@ controllers.controller('IndexController', function($scope, $http) {
     };
 
     $scope.refresh = function() {
-      $http.get('/api/records/lastest')
+      $http.get('/api/records/latest')
           .success(function(data) {
-              $scope.records = data.plannings;
+              $scope.records = data.records;
           })
           .error(function(err, status) {
               console.log(err, status);
