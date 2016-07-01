@@ -39,10 +39,21 @@ def __bad_request():
     return 'not good', 400
 
 
+def __to_pub_list(elements):
+    return list(map(lambda e: e.as_pub_dict(), elements))
+
+
 @app.route('/api/records/latest', methods=['GET'])
 def get_lastest_records():
     records = Record.query.group_by(Record.pin_num) \
         .having(func.max(Record.timestamp)).all()
+
+    return jsonify({'records': __to_pub_list(records)}), 200
+
+
+@app.route('/api/records/<since_epoch_sec>', methods=['GET'])
+def get_records_history(since_epoch_sec):
+    records = Record.query.filter(Record.timestamp >= since_epoch_sec).all()
 
     return jsonify({'records':
                    list(map(lambda r: r.as_pub_dict(), records))}), 200

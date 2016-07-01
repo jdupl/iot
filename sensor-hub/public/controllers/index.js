@@ -18,6 +18,15 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
           .error(function(err, status) {
               console.log(err, status);
           });
+      var since = Math.floor(new Date().getTime() / 1000) - (3600 * 48);
+      $http.get('/api/records/' + since)
+          .success(function(data) {
+              $scope.history = data.records;
+              console.log($scope.history);
+          })
+          .error(function(err, status) {
+              console.log(err, status);
+          });
     };
 
     $scope.refresh();
