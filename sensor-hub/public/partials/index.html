@@ -1,6 +1,6 @@
 <div class="container">
     <div ng-repeat="r in records">
-        <div class="panel panel-primary">
+        <div class="panel" ng-class="r.header">
             <div class="panel-heading">
                 <h3 class="panel-title">Sensor {{r.pin_num}}</h3>
             </div>
