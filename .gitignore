@@ -68,4 +68,4 @@ arduino/_build/collector.ino
 
 bower_components
 prod.db
-config/me.py
+sensor-hub/config/me.py

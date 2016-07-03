@@ -53,10 +53,18 @@ def get_lastest_records():
 
 @app.route('/api/records/<since_epoch_sec>', methods=['GET'])
 def get_records_history(since_epoch_sec):
+    history = {}
     records = Record.query.filter(Record.timestamp >= since_epoch_sec).all()
 
-    return jsonify({'records':
-                   list(map(lambda r: r.as_pub_dict(), records))}), 200
+    for r in records:
+        if r.pin_num not in history:
+            history[r.pin_num] = {}
+            history[r.pin_num]['values'] = []
+            history[r.pin_num]['labels'] = []
+
+        history[r.pin_num]['values'].append(r.value)
+        history[r.pin_num]['labels'].append(r.timestamp)
+    return jsonify({'history': history}), 200
 
 
 @app.route('/api/records', methods=['POST'])
