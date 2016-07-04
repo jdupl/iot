@@ -3,13 +3,11 @@ var controllers = angular.module('app.controllers.IndexController', ['chart.js',
 controllers.controller('IndexController', function($scope, $http, $interval) {
     $scope.alerts = [];
 
-    // $scope.series = ['Soil Humidity'];
     $scope.onClick = function (points, evt) {
       console.log(points, evt);
     };
 
-    $scope.history = [];
-    $scope.series = ['Series A'];
+    $scope.series = ['Soil Humidity'];
 
     $scope.closeAlert = function(index) {
        $scope.alerts.splice(index, 1);
