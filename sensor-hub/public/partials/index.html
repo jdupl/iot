@@ -1,12 +1,34 @@
 <div class="container">
+    <div ng-if="!serverLinkOK()">
+        <div class="row">
+            <div class="alert alert-danger" role="alert">
+                <span>
+                    <h3>
+                        Server link down ! <span am-time-ago="lastUpdate"></span>
+                    </h3>
+                    <button type="button" class="btn btn-default">
+                        <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
+                    </button>
+                </span>
+            </div>
+        </div>
+    </div>
     <div ng-repeat="r in records">
         <div class="col-md-4">
             <div class="panel" ng-class="r.header" style="margin: 6px">
                 <div class="panel-heading">
                     <h3 class="panel-title">Sensor {{r.pin_num}}</h3>
                 </div>
-                <div class="panel-body" id="canvas">
+                <div class="panel-body" ng-if="!history[r.pin_num]">
+                    <p>
+                        No data from last 48H !
+                    </p>
+                </div>
+                <div class="panel-body" id="canvas" ng-if="history[r.pin_num]">
                     <h2>{{r.value}}</h2>
+                    <p>
+                        Last data point <span am-time-ago="history[r.pin_num].labels[history[r.pin_num].labels.length - 1]"></span>
+                    </p>
                     <div ng-if="history">
                         <canvas class="chart chart-line" chart-data="history[r.pin_num].values" chart-labels="history[r.pin_num].labels" chart-click="onClick" chart-series="series"></canvas>
                     </div>

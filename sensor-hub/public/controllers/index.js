@@ -25,6 +25,7 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
           var since = Math.floor(new Date().getTime() / 1000) - (3600 * 48);
           $http.get('/api/records/' + since)
             .success(function(data) {
+              $scope.lastUpdate = Date.now();
               $scope.history = data.history;
             })
             .error(function(err, status) {
@@ -36,6 +37,9 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
         });
 
     };
+    $scope.serverLinkOK = function () {
+      return Date.now() - $scope.lastUpdate < 30000;
+    }
 
     $scope.refresh();
     $scope.intervalPromise = $interval(function() {
