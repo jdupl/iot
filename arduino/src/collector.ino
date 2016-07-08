@@ -203,7 +203,7 @@ void setup() {
     pinMode(RED_LED_PIN, OUTPUT);
     pinMode(GREEN_LED_PIN, OUTPUT);
     pinMode(RELAY_PIN, OUTPUT);
-    digitalWrite(RELAY_PIN, 0);
+    digitalWrite(RELAY_PIN, 1);
 
     Serial.begin(9600);
     softSerial.begin(115200);
