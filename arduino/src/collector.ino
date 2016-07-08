@@ -139,11 +139,11 @@ bool update() {
     unsigned long measuredAt = getEpoch();
 
     // Close close sensors circuit
-    digitalWrite(RELAY_PIN, 1);
-    delay(1000);
+    digitalWrite(RELAY_PIN, 0);
+    delay(250);
     String content = buildRequestContent();
     // Open close sensors circuit
-    digitalWrite(RELAY_PIN, 0);
+    digitalWrite(RELAY_PIN, 1);
 
     String request = "POST /api/records HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
 
@@ -202,6 +202,8 @@ void connect() {
 void setup() {
     pinMode(RED_LED_PIN, OUTPUT);
     pinMode(GREEN_LED_PIN, OUTPUT);
+    pinMode(RELAY_PIN, OUTPUT);
+    digitalWrite(RELAY_PIN, 0);
 
     Serial.begin(9600);
     softSerial.begin(115200);
