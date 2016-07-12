@@ -135,7 +135,7 @@ def each(hours, start_at=dt.time(0, 0, 0), max_iterations=24):
 if __name__ == '__main__':
     import RPi.GPIO as GPIO
     try:
-        light_pins = [23, 24]  # GPIO pins of the lights (BCM)
+        light_pins = [23, 24, 25, 27]  # GPIO pins of the lights (BCM)
         light_schedule = Schedule(light_pins,
                                   [dt.time(5, 0, 0)], [dt.time(23, 55, 0)])
         fan_schedule = Schedule([22],  # GPIO pins of the fans (BCM)
