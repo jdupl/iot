@@ -1,0 +1,13 @@
+{
+  "name": "sensor-hub",
+  "version": "0.0.0",
+  "description": "Frontend for sensor-hub",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jdupl/iot.git"
+  },
+  "homepage": "https://github.com/jdupl/iot",
+  "dependencies": {
+    "n3-charts": "^2.0.27"
+  }
+}

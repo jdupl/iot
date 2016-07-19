@@ -1,4 +1,4 @@
-var controllers = angular.module('app.controllers.IndexController', ['chart.js', 'ui.bootstrap']);
+var controllers = angular.module('app.controllers.IndexController', ['ui.bootstrap']);
 
 controllers.controller('IndexController', function($scope, $http, $interval) {
     $scope.alerts = [];

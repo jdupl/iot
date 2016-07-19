@@ -94,6 +94,54 @@ class HubTest(unittest.TestCase):
         self.assertEqual(records[2]['timestamp'], 1464191598)
         self.assertEqual(records[2]['value'], 1022)
 
+    def test_get_history(self):
+        db_session.add(Record(1, 100, 1468588400))
+
+        db_session.add(Record(1, 1024, 1468939853))
+        db_session.add(Record(2, 1023, 1468939853))
+        db_session.add(Record(3, 1022, 1468939853))
+
+        db_session.add(Record(1, 1021, 1468853452))
+        db_session.add(Record(2, 1020, 1468853452))
+        db_session.add(Record(3, 1020, 1468853452))
+
+        db_session.add(Record(1, 1, 1468883452))
+        db_session.add(Record(2, 2, 1468883452))
+        db_session.add(Record(3, 3, 1468883452))
+
+        db_session.commit()
+
+        res = self.app.get('/api/records/1468688400')
+        assert res.status_code == 200
+        history = json.loads(res.data.decode('utf8'))
+        assert 'history' in history
+        history = history['history']
+        self.assertEqual(3, len(history))
+
+        self.assertEqual(3, len(history['1']))
+        self.assertEqual(history['1'][0]['x'], 1468939853)
+        self.assertEqual(history['1'][0]['y'], 1024)
+        self.assertEqual(history['1'][1]['x'], 1468853452)
+        self.assertEqual(history['1'][1]['y'], 1021)
+        self.assertEqual(history['1'][2]['x'], 1468883452)
+        self.assertEqual(history['1'][2]['y'], 1)
+
+        self.assertEqual(3, len(history['2']))
+        self.assertEqual(history['2'][0]['x'], 1468939853)
+        self.assertEqual(history['2'][0]['y'], 1023)
+        self.assertEqual(history['2'][1]['x'], 1468853452)
+        self.assertEqual(history['2'][1]['y'], 1020)
+        self.assertEqual(history['2'][2]['x'], 1468883452)
+        self.assertEqual(history['2'][2]['y'], 2)
+
+        self.assertEqual(3, len(history['3']))
+        self.assertEqual(history['3'][0]['x'], 1468939853)
+        self.assertEqual(history['3'][0]['y'], 1022)
+        self.assertEqual(history['3'][1]['x'], 1468853452)
+        self.assertEqual(history['3'][1]['y'], 1020)
+        self.assertEqual(history['3'][2]['x'], 1468883452)
+        self.assertEqual(history['3'][2]['y'], 3)
+
 
 if __name__ == '__main__':
     unittest.main()

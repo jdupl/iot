@@ -58,12 +58,9 @@ def get_records_history(since_epoch_sec):
 
     for r in records:
         if r.pin_num not in history:
-            history[r.pin_num] = {}
-            history[r.pin_num]['values'] = []
-            history[r.pin_num]['labels'] = []
+            history[r.pin_num] = []
 
-        history[r.pin_num]['values'].append(r.value)
-        history[r.pin_num]['labels'].append(r.timestamp)
+        history[r.pin_num].append({'x': r.timestamp, 'y': r.value})
     return jsonify({'history': history}), 200
 
 
