@@ -3,11 +3,23 @@ var controllers = angular.module('app.controllers.IndexController', ['ui.bootstr
 controllers.controller('IndexController', function($scope, $http, $interval) {
     $scope.alerts = [];
 
-    $scope.onClick = function (points, evt) {
-      console.log(points, evt);
-    };
-
-    $scope.series = ['Soil Humidity'];
+    function genOpts (pin) {
+        return {
+          margin: {top: 40},
+          series: [
+            {
+              axis: "y",
+              dataset: pin,
+              key: "y",
+              label: "Humidity",
+              color: "#1f77b4",
+              type: ['line', 'dot'],
+              id: 'Humidity ' + pin
+            }
+          ],
+          axes: {x: {key: "x"}}
+        };
+    }
 
     $scope.closeAlert = function(index) {
        $scope.alerts.splice(index, 1);
@@ -26,7 +38,10 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
           $http.get('/api/records/' + since)
             .success(function(data) {
               $scope.lastUpdate = Date.now();
-              $scope.history = data.history;
+              $scope.data_history = data.history;
+              for (var i = 0; i < $scope.records.length; i++) {
+                $scope.records[i].options = genOpts($scope.records[i].pin_num);
+              }
             })
             .error(function(err, status) {
                 console.log(err, status);
