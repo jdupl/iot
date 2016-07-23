@@ -5,7 +5,7 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
 
     function genOpts (pin) {
         return {
-          margin: {top: 40},
+          margin: {top: 18},
           series: [
             {
               axis: "y",
@@ -17,7 +17,7 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
               id: 'Humidity ' + pin
             }
           ],
-          axes: {x: {key: "x"}}
+          axes: {x: {key: "x", type: "date"}}
         };
     }
 
@@ -28,18 +28,25 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
     $scope.refresh = function() {
       $http.get('/api/records/latest')
         .success(function(data) {
-
           $scope.records = data.records;
-          for (var i = 0; i < $scope.records.length; i++) {
-            $scope.records[i].header = 'panel-' + getHeaderForValue($scope.records[i].value);
-          }
+
           // Get 48h history for chart
           var since = Math.floor(new Date().getTime() / 1000) - (3600 * 48);
           $http.get('/api/records/' + since)
             .success(function(data) {
               $scope.lastUpdate = Date.now();
               $scope.data_history = data.history;
+
+              for (var v in $scope.data_history) {
+                if ($scope.data_history.hasOwnProperty(v)) {
+                  for (var i = 0; i < $scope.data_history[v].length; i++) {
+                    $scope.data_history[v][i].x = new Date($scope.data_history[v][i].x * 1000)
+                  }
+                }
+              }
+
               for (var i = 0; i < $scope.records.length; i++) {
+                $scope.records[i].header = 'panel-' + getHeaderForValue($scope.records[i].value);
                 $scope.records[i].options = genOpts($scope.records[i].pin_num);
               }
             })
