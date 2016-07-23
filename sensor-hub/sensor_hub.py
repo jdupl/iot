@@ -2,7 +2,7 @@
 import sys
 
 from flask import Flask, request, jsonify
-from sqlalchemy import Column, Integer, func
+from sqlalchemy import Column, Integer, func, desc
 from sqlalchemy.ext.declarative import declarative_base
 
 from database import db_session, init_db, init_engine
@@ -80,6 +80,18 @@ def add_record():
         return 'ok', 200
     except Exception:
         return __bad_request()
+
+
+def _get_last_watering(pin_num):
+    records = Record.query.filter(Record.pin_num == pin_num) \
+        .order_by(desc(Record.timestamp)).limit(256).all()
+    watering_thresold = 100
+    last = 0
+
+    for current in records:
+        if current.value < last and last - current.value > watering_thresold:
+            return current.timestamp
+        last = current.value
 
 
 def setup(env=None):

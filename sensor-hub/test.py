@@ -1,14 +1,16 @@
 import os
 import json
 import unittest
+import datetime as dt
+import sensor_hub
 
-from app import app, db_session, Record, setup
+from sensor_hub import app, db_session, Record
 
 
 class HubTest(unittest.TestCase):
 
     def setUp(self):
-        setup('test')
+        sensor_hub.setup('test')
         self.app = app.test_client()
         db_session.close()
 
@@ -141,6 +143,60 @@ class HubTest(unittest.TestCase):
         self.assertEqual(history['3'][1]['y'], 1020)
         self.assertEqual(history['3'][2]['x'], 1468883452)
         self.assertEqual(history['3'][2]['y'], 3)
+
+
+class AnalyticsTest(unittest.TestCase):
+
+    def setUp(self):
+        app = sensor_hub.setup('test')
+        self.app = app.test_client()
+
+    def tearDown(self):
+        os.remove('/tmp/test.db')
+
+    def test_get_last_watering(self):
+        with mock_datetime(2016, 5, 30, 3, 58):
+            min_val = 200
+            v = 200
+            for h in range(0, 65):
+                v += 15
+                date = dt.datetime.now() - dt.timedelta(hours=h, minutes=1)
+                record = Record(7, (v + min_val) % 1024, int(date.timestamp()))
+                db_session.add(record)
+            db_session.commit()
+            db_session.close()
+
+            actual = sensor_hub._get_last_watering(7)
+            self.assertEqual(1464447420, actual)
+
+
+class mock_datetime(object):
+    """
+    Monkey-patch datetime for predictable results.
+    From https://github.com/dbader/schedule/blob/master/test_schedule.py
+    """
+    def __init__(self, year, month, day, hour, minute):
+        self.year = year
+        self.month = month
+        self.day = day
+        self.hour = hour
+        self.minute = minute
+
+    def __enter__(self):
+        class MockDate(dt.datetime):
+            @classmethod
+            def today(cls):
+                return cls(self.year, self.month, self.day)
+
+            @classmethod
+            def now(cls):
+                return cls(self.year, self.month, self.day,
+                           self.hour, self.minute)
+        self.original_datetime = dt.datetime
+        dt.datetime = MockDate
+
+    def __exit__(self, *args, **kwargs):
+        dt.datetime = self.original_datetime
 
 
 if __name__ == '__main__':
