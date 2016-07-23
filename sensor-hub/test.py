@@ -3,7 +3,9 @@ import json
 import unittest
 import datetime as dt
 import sensor_hub
+import csv
 
+from sqlalchemy import desc
 from sensor_hub import app, db_session, Record
 
 
@@ -148,26 +150,51 @@ class HubTest(unittest.TestCase):
 class AnalyticsTest(unittest.TestCase):
 
     def setUp(self):
+        self.now = mock_datetime(2016, 7, 18, 16, 25)
         app = sensor_hub.setup('test')
         self.app = app.test_client()
 
     def tearDown(self):
+        db_session.close()
         os.remove('/tmp/test.db')
 
-    def test_get_last_watering(self):
-        with mock_datetime(2016, 5, 30, 3, 58):
-            min_val = 200
-            v = 200
-            for h in range(0, 65):
-                v += 15
-                date = dt.datetime.now() - dt.timedelta(hours=h, minutes=1)
-                record = Record(7, (v + min_val) % 1024, int(date.timestamp()))
-                db_session.add(record)
+    def gen_data(self, offset=None):
+        self.all_records = []
+        with open('fixtures/dht11_data_short.csv') as csvfile:
+            reader = csv.reader(csvfile)
+
+            for i, row in enumerate(reader):
+                record = Record(row[1], row[2], row[0])
+                self.all_records.append(record)
+
+                if not offset or i >= offset:
+                    db_session.add(record)
+
             db_session.commit()
             db_session.close()
 
-            actual = sensor_hub._get_last_watering(7)
-            self.assertEqual(1464447420, actual)
+    def test_get_last_watering_timestamp(self):
+        with self.now:
+            self.gen_data()
+            self.assertEqual(len(self.all_records), 31)
+            actual = sensor_hub._get_last_watering_timestamp(1)
+            self.assertEqual(1468810074, actual)
+
+    def test_predictions(self):
+        with self.now:
+            self.gen_data(offset=10)
+
+            records = Record.query.filter(Record.pin_num == 1) \
+                .order_by(desc(Record.timestamp)).all()
+            self.assertEqual(21, len(records))
+            poly = sensor_hub._get_polynomial(1, 1468810074)
+
+            for r in self.all_records[:-2]:
+                prediction = sensor_hub._predict(1, float(r.timestamp), poly)
+                err = prediction - float(r.value)
+                print(prediction, r.value, err)
+                # self.assertFalse(prediction > float(r.value) * 1.05)
+                # self.assertFalse(prediction < float(r.value) * 0.95)
 
 
 class mock_datetime(object):

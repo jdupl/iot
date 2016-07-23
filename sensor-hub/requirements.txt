@@ -1,2 +1,3 @@
 Flask==0.10.1
 Flask-SqlAlchemy==2.1
+numpy==1.11.1

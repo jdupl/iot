@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import sys
+import datetime as dt
 
 from flask import Flask, request, jsonify
-from sqlalchemy import Column, Integer, func, desc
+from sqlalchemy import Column, Integer, func, desc, between
 from sqlalchemy.ext.declarative import declarative_base
+from numpy.polynomial import polynomial
 
 from database import db_session, init_db, init_engine
 
@@ -82,16 +84,36 @@ def add_record():
         return __bad_request()
 
 
-def _get_last_watering(pin_num):
+def _get_last_watering_timestamp(pin_num):
     records = Record.query.filter(Record.pin_num == pin_num) \
-        .order_by(desc(Record.timestamp)).limit(256).all()
-    watering_thresold = 100
-    last = 0
+        .order_by(desc(Record.timestamp)).limit(500).all()
+    watering_thresold = 100  # Minimum fluctuation to consider a watering
+    last_record = records[0]
 
-    for current in records:
-        if current.value < last and last - current.value > watering_thresold:
-            return current.timestamp
-        last = current.value
+    for current in records[1:]:
+
+        if current.value > last_record.value \
+         and current.value - last_record.value > watering_thresold:
+            return last_record.timestamp
+        last_record = current
+
+
+def _get_polynomial(pin_num, start, stop=dt.datetime.now()):
+    records = Record.query \
+        .filter(Record.pin_num == pin_num) \
+        .filter(between(Record.timestamp, start, stop)) \
+        .order_by(Record.timestamp).all()
+    x = []
+    y = []
+    for r in records:
+        x.append((r.timestamp - start))
+        y.append(int(r.value))
+    return polynomial.polyfit(x, y, 1)
+
+
+def _predict(pin_num, at_time, polynom):
+    last_watering = _get_last_watering_timestamp(pin_num)
+    return polynomial.polyval((at_time - last_watering), polynom)
 
 
 def setup(env=None):
