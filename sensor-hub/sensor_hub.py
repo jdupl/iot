@@ -47,10 +47,25 @@ def __to_pub_list(elements):
 
 @app.route('/api/records/latest', methods=['GET'])
 def get_lastest_records():
-    records = Record.query.group_by(Record.pin_num) \
-        .having(func.max(Record.timestamp)).all()
+    pub = []
+    records = __to_pub_list(
+        Record.query.group_by(Record.pin_num)
+        .having(func.max(Record.timestamp)).all())
 
-    return jsonify({'records': __to_pub_list(records)}), 200
+    for r in records:
+        last_watering_timestamp = _get_last_watering_timestamp(r['pin_num'])
+
+        if last_watering_timestamp:
+            polyn = _get_polynomial(r['pin_num'], last_watering_timestamp)
+
+            next_watering_timestamp = _predict_next_watering(
+                    polyn, last_watering_timestamp)
+
+            r['last_watering_timestamp'] = last_watering_timestamp
+            r['next_watering_timestamp'] = next_watering_timestamp
+        pub.append(r)
+
+    return jsonify({'records': pub}), 200
 
 
 @app.route('/api/records/<since_epoch_sec>', methods=['GET'])
@@ -110,7 +125,8 @@ def _get_polynomial(pin_num, start, stop=dt.datetime.now()):
         x.append((r.timestamp - start))
         y.append(int(r.value))
 
-    return polynomial.polyfit(x, y, 1)
+    if len(x) > 0:
+        return polynomial.polyfit(x, y, 1)
 
 
 def _predict_at(at_time, polynom, last_watering_timestamp):
