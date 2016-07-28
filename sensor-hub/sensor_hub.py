@@ -145,6 +145,7 @@ def _predict_next_watering(polynom, last_watering_timestamp):
         if val <= 50:
             return time + last_watering_timestamp
         time += step
+        tries += 1
 
 
 def setup(env=None):
