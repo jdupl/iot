@@ -25,7 +25,7 @@ class Record(Base):
 
     def __init__(self, pin_num, value, timestamp=None):
         self.timestamp = timestamp
-        self.value = 1024 - value
+        self.value = 1024 - int(value)
         self.pin_num = pin_num
 
     def as_pub_dict(self):
