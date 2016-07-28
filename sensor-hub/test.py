@@ -164,7 +164,7 @@ class AnalyticsTest(unittest.TestCase):
             reader = csv.reader(csvfile)
 
             for i, row in enumerate(reader):
-                record = Record(row[1], row[2], row[0])
+                record = Record(row[1], 1024 - int(row[2]), row[0])
                 self.all_records.append(record)
 
                 if not offset or i >= offset:
@@ -190,11 +190,17 @@ class AnalyticsTest(unittest.TestCase):
             poly = sensor_hub._get_polynomial(1, 1468810074)
 
             for r in self.all_records[:-2]:
-                prediction = sensor_hub._predict(1, float(r.timestamp), poly)
-                err = prediction - float(r.value)
-                print(prediction, r.value, err)
-                # self.assertFalse(prediction > float(r.value) * 1.05)
-                # self.assertFalse(prediction < float(r.value) * 0.95)
+                prediction = sensor_hub._predict_at(
+                    float(r.timestamp), poly, 1468810074)
+                # err = prediction - float(r.value)
+                # print(prediction, r.value, err)
+
+                # Test prediction is ~20% accurate
+                self.assertFalse(prediction > float(r.value) * 1.2)
+                self.assertFalse(prediction < float(r.value) * 0.8)
+
+            self.assertEqual(sensor_hub._predict_next_watering(
+                poly, 1468810074), 1468810074 + 108000)
 
 
 class mock_datetime(object):

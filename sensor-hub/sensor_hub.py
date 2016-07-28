@@ -92,8 +92,8 @@ def _get_last_watering_timestamp(pin_num):
 
     for current in records[1:]:
 
-        if current.value > last_record.value \
-         and current.value - last_record.value > watering_thresold:
+        if current.value < last_record.value \
+         and last_record.value - current.value >= watering_thresold:
             return last_record.timestamp
         last_record = current
 
@@ -105,15 +105,30 @@ def _get_polynomial(pin_num, start, stop=dt.datetime.now()):
         .order_by(Record.timestamp).all()
     x = []
     y = []
+
     for r in records:
         x.append((r.timestamp - start))
         y.append(int(r.value))
+
     return polynomial.polyfit(x, y, 1)
 
 
-def _predict(pin_num, at_time, polynom):
-    last_watering = _get_last_watering_timestamp(pin_num)
-    return polynomial.polyval((at_time - last_watering), polynom)
+def _predict_at(at_time, polynom, last_watering_timestamp):
+    return polynomial.polyval((at_time - last_watering_timestamp), polynom)
+
+
+def _predict_next_watering(polynom, last_watering_timestamp):
+    max_tries = 168  # One week
+    step = 3600  # Step in seconds
+    val = 0
+    time = 0
+    tries = 0
+
+    while tries <= max_tries:
+        val = polynomial.polyval(time, polynom)
+        if val <= 50:
+            return time + last_watering_timestamp
+        time += step
 
 
 def setup(env=None):
