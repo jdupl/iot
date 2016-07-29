@@ -72,14 +72,12 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
     });
 
   function getHeaderForValue(val) {
-    if (val > 920) {
+    if (val > 1000 || val < 50) {
       return 'danger';
-    } else if (val > 800 || val < 300) {
+    } else if (val > 900 || val < 200) {
       return 'warning';
-    } else if (val > 600) {
-      return 'success';
     } else {
-      return 'warning';
+      return 'success';
     }
   }
 });
