@@ -21,10 +21,20 @@
                     <h3 class="panel-title">Sensor {{r.pin_num}}</h3>
                 </div>
                 <div class="panel-body">
-                    <!-- <p>
-                        Last data point <span am-time-ago="history[r.pin_num].labels[history[r.pin_num].labels.length - 1]"></span>
-                    </p> -->
-                    <div ng-if="data_history">
+                    <p ng-if="isExpired(data_history[r.pin_num][0].x, 3800)" class="text-danger">
+                        Last update <span am-time-ago="data_history[r.pin_num][0].x"></span>. Check sensor.
+                    </p>
+                    <h2>{{r.value}}</h2>
+                    <p>
+                        Last watered <span am-time-ago="r.last_watering_timestamp * 1000" title="{{r.last_watering_timestamp * 1000 | amDateFormat:'dddd, MMMM Do YYYY, HH:mm:ss'}}"></span>
+                    </p>
+                    <p ng-if="r.next_watering_timestamp">
+                        Next watering planned in <span title="{{r.next_watering_timestamp * 1000 | amDateFormat:'dddd, MMMM Do YYYY, HH:mm:ss'}}">{{r.next_watering_timestamp - r.timestamp | amDurationFormat : 'second' }}</span>
+                    </p>
+                    <button type="button" class="btn btn-default" ng-click="visibility[r.pin_num] = !visibility[r.pin_num]">
+                        Toggle graph
+                    </button>
+                    <div ng-if="visibility[r.pin_num]">
                         <linechart data="data_history" options="r.options"></linechart>
                     </div>
                 </div>

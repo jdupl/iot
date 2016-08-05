@@ -2,6 +2,7 @@ var controllers = angular.module('app.controllers.IndexController', ['ui.bootstr
 
 controllers.controller('IndexController', function($scope, $http, $interval) {
     $scope.alerts = [];
+    $scope.visibility = [];
 
     function genOpts (pin) {
         return {
@@ -19,6 +20,11 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
           ],
           axes: {x: {key: "x", type: "date"}}
         };
+    }
+
+    $scope.isExpired = function(date, maxSec) {
+      console.log(Date.now()- date);
+      return Date.now()- date > maxSec * 1000
     }
 
     $scope.closeAlert = function(index) {
@@ -44,7 +50,6 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
                   }
                 }
               }
-
               for (var i = 0; i < $scope.records.length; i++) {
                 $scope.records[i].header = 'panel-' + getHeaderForValue($scope.records[i].value);
                 $scope.records[i].options = genOpts($scope.records[i].pin_num);

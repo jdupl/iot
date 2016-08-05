@@ -30,7 +30,6 @@ class Record(Base):
 
     def as_pub_dict(self):
         return {
-            'id': self.id,
             'timestamp': self.timestamp,
             'pin_num': self.pin_num,
             'value': self.value
