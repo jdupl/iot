@@ -49,7 +49,7 @@ def set_src(key, value, lines):
     return False
 
 if __name__ == '__main__':
-    src = load_src('src/collector.ino')
+    src = load_src('src/plant-monitor.ino')
     config = load_cfg('config/default.yaml')
 
     for k, v in config.items():
@@ -58,6 +58,6 @@ if __name__ == '__main__':
             print('failed !', k, v)
             exit(1)
 
-    with open('_build/collector.ino', 'w') as f:
+    with open('_build/plant-monitor.ino', 'w') as f:
         f.writelines(src)
     subprocess.check_call(['make', 'upload'], cwd='_build')
