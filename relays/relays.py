@@ -145,7 +145,7 @@ if __name__ == '__main__':
                                 each(1, start_at=dt.time(5, 50, 0)),
                                 each(1, start_at=dt.time(5, 55, 0)))
 
-        control_relays([light_schedule, fan_schedule])
+        control_relays([bloom_light_schedule, veg_light_schedule, fan_schedule])
     except KeyboardInterrupt:
         print('Got KeyboardInterrupt.')
     except Exception as e:
