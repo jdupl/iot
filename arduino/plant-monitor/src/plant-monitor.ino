@@ -127,6 +127,11 @@ unsigned long getEpoch() {
     return epochInit + (millis() / 1000 - epochMesuredAt);
 }
 
+bool epochNeedsUpdate() {
+    unsigned long expire = 86400; // every 24h
+    return (epochInit + expire > getEpoch() || epochInit == 0);
+}
+
 String buildRequestContent() {
     String content =  ((String) getEpoch());
     for (int i = 0; i < sizeof(sensorPins) / sizeof(int); i++) {
@@ -185,18 +190,26 @@ bool updateWithRetries(int maxTries) {
     return success;
 }
 
-void connect() {
+bool connect() {
     while (!connectWifi()) {
         delay(10000);
     }
     digitalWrite(RED_LED_PIN, 1); // Wi-Fi OK (only red led on)
 
-    while(!setEpoch()) {
-        delay(30000);
-        // TODO only reset if wifi is offline
-        resetESP();
+    if (!epochNeedsUpdate()) {
+        return true;
     }
-    digitalWrite(RED_LED_PIN, 1); // Wi-Fi + NTP OK (both leds on)
+
+    int maxTriesNTP = 3;
+    int tries = 0;
+    while(tries++ < maxTriesNTP) {
+        if (setEpoch()) {
+            digitalWrite(RED_LED_PIN, 1); // Wi-Fi + NTP OK (both leds on)
+            return true;
+        }
+        delay(10000);
+    }
+    return false;
 }
 
 void setup() {
@@ -214,12 +227,14 @@ void setup() {
 
     softSerial.begin(9600);
     delay(1000);
-    connect();
+    while (!connect()) {}
 }
 
 void loop() {
     if (!updateWithRetries(5)) {
-        return resetESP();
+        resetESP();
+        connect();
+        return;
     }
 
     // Server link OK (only green led on)

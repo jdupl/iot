@@ -64,7 +64,7 @@ target/
 
 # Arduino builds
 arduino/*/_build/build*
-arduino/*/_build/collector.ino
+arduino/*/_build/plant-monitor.ino
 
 bower_components
 node_modules
