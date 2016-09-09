@@ -138,14 +138,22 @@ if __name__ == '__main__':
         veg_light_pins = [24, 27]  # GPIO pins of the lights (BCM)
         veg_light_schedule = Schedule(veg_light_pins,
                                       [dt.time(5, 0, 0)], [dt.time(23, 55, 0)])
+
         bloom_light_pins = [23]  # GPIO pins of the lights (BCM)
         bloom_light_schedule = Schedule(bloom_light_pins, [dt.time(8, 0, 0)],
                                         [dt.time(20, 0, 0)])
-        fan_schedule = Schedule([22],  # GPIO pins of the fans (BCM)
-                                each(1, start_at=dt.time(5, 50, 0)),
-                                each(1, start_at=dt.time(5, 55, 0)))
 
-        control_relays([bloom_light_schedule, veg_light_schedule, fan_schedule])
+        fan_schedule_1 = Schedule([22],  # GPIO pins of the fans (BCM)
+                                  each(1, start_at=dt.time(5, 50, 0)),
+                                  each(1, start_at=dt.time(5, 55, 0)))
+
+        fan_schedule_2 = Schedule([25],  # GPIO pins of the fans (BCM)
+                                  each(1, start_at=dt.time(5, 55, 0)),
+                                  each(1, start_at=dt.time(6, 0, 0)))
+
+        control_relays([bloom_light_schedule, veg_light_schedule,
+                        fan_schedule_1, fan_schedule_2])
+
     except KeyboardInterrupt:
         print('Got KeyboardInterrupt.')
     except Exception as e:
