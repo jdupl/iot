@@ -28,7 +28,6 @@ def time_lt_other(time, other):
 
 
 def add_delta_to_rel_time(t, delta):
-    # print('adding', delta, 'to', t)
     return (dt.datetime.combine(dt.date.today(), t) + delta).time()
 
 
@@ -68,9 +67,11 @@ class Schedule():
             self.close_events.append(add_delta_to_rel_time(t, run_for))
             return
 
-        # Set max cut off if not provided
         if not repeat_until:
+            # Set max cut off if not provided
             repeat_until = dt.time(23, 59, 59)
+        else:
+            repeat_until = dt.time(*repeat_until)
 
         while True:
             last = t

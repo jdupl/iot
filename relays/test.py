@@ -67,6 +67,16 @@ class ScheduleTest(unittest.TestCase):
         self.assertEqual(s.close_events, [dt.time(6, 0, 1), dt.time(14, 13, 5),
                                           dt.time(22, 26, 9)])
 
+    def test_get_times_of_events_from_repeating_schedule_with_limits(self):
+        s = Schedule(14, (5, 0, 0), (1, 0, 0), (8, 0, 0), (21, 0, 0))
+        self.assertEqual(s.open_events, [dt.time(5, 0, 0), dt.time(13, 0, 0)])
+        self.assertEqual(s.close_events, [dt.time(6, 0, 0), dt.time(14, 0, 0)])
+
+        s = Schedule(14, (5, 0, 0), (1, 0, 1), (8, 13, 4), (21, 26, 9))
+        self.assertEqual(s.open_events, [dt.time(5, 0, 0), dt.time(13, 13, 4),
+                                         dt.time(21, 26, 8)])
+        self.assertEqual(s.close_events, [dt.time(6, 0, 1), dt.time(14, 13, 5),
+                                          dt.time(22, 26, 9)])
 
     # def test_get_events_from_each(self):
     #     start_times = relays.each(1, start_at=dt.time(4, 0, 0))
