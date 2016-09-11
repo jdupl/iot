@@ -9,13 +9,69 @@ def time_to_datetime(t, datetime_base):
                                  second=t.second)
 
 
-class Schedule():
-    """Represents open and close events for relay pins."""
+def time_lt_other(time, other):
+    if time.hour > other.hour:
+        return False
+    if time.hour < other.hour:
+        return True
 
-    def __init__(self, pins, open_times, close_times):
+    # Hour is equal
+    if time.minute > other.minute:
+        return False
+    if time.minute < other.minute:
+        return True
+
+    # Minute is equal
+    if time.second < other.second:
+        return True
+    return False
+
+
+def add_delta_to_rel_time(t, delta):
+    return (dt.datetime.combine(dt.date.today(), t) + delta).time()
+
+
+class Schedule():
+    """Represents daily events schedule for relays."""
+
+    def __init__(self, pins, open_time, run_for, repeat_every=None,
+                 repeat_until=None):
+        """
+        pins: GPIO BCM pins to control
+        open_time: First open time of the day
+        run_for: Keep open for this amount of time (tuple of (h, m, s))
+        repeat_every: Repeat each amount of time (tuple of (h, m, s)) or 'None'
+                      if event shouldn't be repeated more than once a day.
+        repeat_until: Repeat schedule until (tuple of (h, m, s)) or 'None' if
+                      it should be repeated until the day ends.
+        """
         self.pins = pins
-        self.open_times = open_times
-        self.close_times = close_times
+        self.first_open = dt.time(*open_time)
+        run_for = dt.timedelta(hours=run_for[0],
+                               minutes=run_for[1], seconds=run_for[2])
+        t = self.first_open
+
+        # Lists containing events relative times
+        self.open_events = []
+        self.close_events = []
+
+        if repeat_every:
+            repeat_every = dt.timedelta(*repeat_every)
+        else:
+            self.open_events.append(t)
+            self.close_events.append(add_delta_to_rel_time(t, run_for))
+            return
+
+        # Set max cut off if not provided
+        if not repeat_until:
+            repeat_until = (23, 59, 59)
+
+        while time_lt_other(t, repeat_until):
+            o_time = t
+            c_time = t + run_for
+            self.open_events.append(o_time)
+            self.close_events.append(c_time)
+            t += repeat_every
 
     def get_latest_event(self, now):
         open_event = self._get_latest_event(self.open_times, 'on')
@@ -153,6 +209,7 @@ if __name__ == '__main__':
 
         control_relays([bloom_light_schedule, veg_light_schedule,
                         fan_schedule_1, fan_schedule_2])
+        schedule.every().day.at("10:30").do(job)
 
     except KeyboardInterrupt:
         print('Got KeyboardInterrupt.')
