@@ -1,7 +1,6 @@
 import datetime as dt
 import unittest
 
-import relays
 from relays import Schedule
 
 
@@ -54,6 +53,19 @@ class ScheduleTest(unittest.TestCase):
         s = Schedule(14, (5, 3, 55), (3, 34, 10))
         self.assertEqual(s.open_events, [dt.time(5, 3, 55)])
         self.assertEqual(s.close_events, [dt.time(8, 38, 5)])
+
+    def test_get_times_of_events_from_repeating_schedule(self):
+        s = Schedule(14, (5, 0, 0), (1, 0, 0), (8, 0, 0))
+        self.assertEqual(s.open_events, [dt.time(5, 0, 0), dt.time(13, 0, 0),
+                                         dt.time(21, 0, 0)])
+        self.assertEqual(s.close_events, [dt.time(6, 0, 0), dt.time(14, 0, 0),
+                                          dt.time(22, 0, 0)])
+
+        s = Schedule(14, (5, 0, 0), (1, 0, 1), (8, 13, 4))
+        self.assertEqual(s.open_events, [dt.time(5, 0, 0), dt.time(13, 13, 4),
+                                         dt.time(21, 26, 8)])
+        self.assertEqual(s.close_events, [dt.time(6, 0, 1), dt.time(14, 13, 5),
+                                          dt.time(22, 26, 9)])
 
 
     # def test_get_events_from_each(self):
