@@ -70,3 +70,6 @@ bower_components
 node_modules
 prod.db
 sensor-hub/config/me.py
+
+# User configs
+**my*.yaml
