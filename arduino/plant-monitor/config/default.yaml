@@ -16,4 +16,4 @@ wifi:
 
 sensor_hub:
     ip: ip_or_domain
-    port: 9090
+    port: 80

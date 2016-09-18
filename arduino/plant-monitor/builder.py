@@ -1,11 +1,12 @@
-import subprocess
-import yaml
 import re
+import sys
+import yaml
+import subprocess
 
 
 def load_cfg(yaml_file):
     config = {}
-    with open('config/default.yaml', 'r') as f:
+    with open(yaml_file, 'r') as f:
         yaml_cfg = yaml.load(f.read())
 
     for node in yaml_cfg:
@@ -49,8 +50,14 @@ def set_src(key, value, lines):
     return False
 
 if __name__ == '__main__':
+    config_name = 'default'
+
+    if len(sys.argv) == 2:
+        config_name = sys.argv[1]
+
+    print('Using config name "%s"' % config_name)
     src = load_src('src/plant-monitor.ino')
-    config = load_cfg('config/default.yaml')
+    config = load_cfg('config/%s.yaml' % config_name)
 
     for k, v in config.items():
         src = set_src(k, v, src)
