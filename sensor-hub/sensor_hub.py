@@ -127,9 +127,9 @@ def add_record():
                     db_session.add(Record(*piece_dict, timestamp=timestamp))
 
             if temperature and rel_humidity:
-                db_session.add(
-                    DHT11Record(int(temperature), int(rel_humidity),
-                                timestamp=timestamp))
+                dht11_r = DHT11Record(int(temperature), int(rel_humidity),
+                                      timestamp=timestamp)
+                db_session.add(dht11_r)
 
             db_session.commit()
 
