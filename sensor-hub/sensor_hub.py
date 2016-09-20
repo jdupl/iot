@@ -35,6 +35,27 @@ class Record(Base):
             'value': self.value
         }
 
+class DHT11Record(Base):
+    __tablename__ = 'records_dht11'
+    query = db_session.query_property()
+
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(Integer)
+    pin_num = Column(Integer)
+    value = Column(Integer)
+
+    def __init__(self, temperature, rel_humidity, timestamp=None):
+        self.timestamp = timestamp
+        self.rel_humidity = rel_humidity
+        self.temperature = temperature
+
+    def as_pub_dict(self):
+        return {
+            'timestamp': self.timestamp,
+            'rel_humidity': self.rel_humidity
+            'temperature': self.temperature
+        }
+
 
 def __bad_request():
     return 'not good', 400
@@ -89,9 +110,25 @@ def add_record():
                 return __bad_request()
 
             timestamp = pieces[0]
+            temperature = None
+            rel_humidity = None
+
             for piece in pieces[1:]:
-                db_session.add(Record(*(piece).split(':'), timestamp=timestamp))
-                db_session.commit()
+                piece_dict = (piece).split(':')
+                key = piece_dict[0]
+                val = piece_dict[1]
+
+                if key is 'dht11_temp':
+                    temperature = val
+                elif key is 'dht11_humidity':
+                    rel_humidity = val
+                else:
+                    db_session.add(Record(*piece_dict, timestamp=timestamp))
+
+            if temperature and rel_humidity:
+                db_session.add(DHT11Record(temperature, rel_humidity, timestamp=timestamp))
+
+            db_session.commit()
 
         return 'ok', 200
     except Exception:
