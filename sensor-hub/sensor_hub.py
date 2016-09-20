@@ -52,7 +52,7 @@ class DHT11Record(Base):
     def as_pub_dict(self):
         return {
             'timestamp': self.timestamp,
-            'rel_humidity': self.rel_humidity
+            'rel_humidity': self.rel_humidity,
             'temperature': self.temperature
         }
 

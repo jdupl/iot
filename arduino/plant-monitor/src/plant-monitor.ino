@@ -17,7 +17,7 @@ const int sensorPins[] = {changeme}; // hygrometer_pins
 
 // Open circuit with relay when sensors are not in use to reduce oxidation
 const int RELAY_PIN = changeme; // digital_pins_relay
-const int DHT11_PIN = changeme; // digital_pins_dht11
+const int DHT11_PIN = changeme; // digital_pins_dht_11
 const int RED_LED_PIN = changeme; // digital_pins_red_led
 const int GREEN_LED_PIN = changeme; // digital_pins_green_led
 
@@ -27,7 +27,7 @@ unsigned long epochInit = 0;
 unsigned long epochMesuredAt = 0;
 unsigned long lastSuccessUpdate = 0;
 
-const dht11 DHT11;
+dht11 DHT11;
 
 bool poolNTP(unsigned long timeout) {
     unsigned long tExpire = millis() + timeout;
@@ -135,18 +135,6 @@ bool epochNeedsUpdate() {
     return (epochInit + expire > getEpoch() || epochInit == 0);
 }
 
-String buildRequestContent() {
-    String content =  ((String) getEpoch());
-    for (int i = 0; i < sizeof(sensorPins) / sizeof(int); i++) {
-        content += ',' + (String) sensorPins[i] + ':' + String(analogRead(sensorPins[i]));
-    }
-    if (getDHT11Measure()) {
-        content += ',dht11_temp:' + String(DHT11.temperature);
-        content += ',dht11_humidity:' + String(DHT11.humidity);
-    }
-    return content;
-}
-
 bool getDHT11Measure() {
     int maxTries = 20;
     int tries = 0;
@@ -157,6 +145,19 @@ bool getDHT11Measure() {
         }
     }
     return false;
+}
+
+
+String buildRequestContent() {
+    String content =  ((String) getEpoch());
+    for (int i = 0; i < sizeof(sensorPins) / sizeof(int); i++) {
+        content += ',' + (String) sensorPins[i] + ':' + String(analogRead(sensorPins[i]));
+    }
+    if (getDHT11Measure()) {
+        content += ",dht11_temp:" + String(DHT11.temperature);
+        content += ",dht11_humidity:" + String(DHT11.humidity);
+    }
+    return content;
 }
 
 bool update() {
