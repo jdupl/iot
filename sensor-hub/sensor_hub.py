@@ -42,8 +42,8 @@ class DHT11Record(Base):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(Integer)
-    pin_num = Column(Integer)
-    value = Column(Integer)
+    rel_humidity = Column(Integer)
+    temperature = Column(Integer)
 
     def __init__(self, temperature, rel_humidity, timestamp=None):
         self.timestamp = timestamp
