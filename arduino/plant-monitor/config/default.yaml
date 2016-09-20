@@ -5,6 +5,7 @@ digital_pins:
     relay: 4
     red_led: 5
     green_led: 6
+    dht_11: 2
 
 esp_board: # Digital pins
     rx: 11
