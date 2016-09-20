@@ -35,6 +35,7 @@ class Record(Base):
             'value': self.value
         }
 
+
 class DHT11Record(Base):
     __tablename__ = 'records_dht11'
     query = db_session.query_property()
@@ -118,15 +119,17 @@ def add_record():
                 key = piece_dict[0]
                 val = piece_dict[1]
 
-                if key is 'dht11_temp':
+                if key == 'dht11_temp':
                     temperature = val
-                elif key is 'dht11_humidity':
+                elif key == 'dht11_humidity':
                     rel_humidity = val
                 else:
                     db_session.add(Record(*piece_dict, timestamp=timestamp))
 
             if temperature and rel_humidity:
-                db_session.add(DHT11Record(temperature, rel_humidity, timestamp=timestamp))
+                db_session.add(
+                    DHT11Record(int(temperature), int(rel_humidity),
+                                timestamp=timestamp))
 
             db_session.commit()
 
