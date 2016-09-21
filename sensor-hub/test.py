@@ -164,7 +164,7 @@ class AnalyticsTest(unittest.TestCase):
 
     def gen_data(self, offset=None):
         self.all_records = []
-        with open('fixtures/dht11_data_short.csv') as csvfile:
+        with open('fixtures/rel_humidity_data_short.csv') as csvfile:
             reader = csv.reader(csvfile)
 
             for i, row in enumerate(reader):
@@ -202,6 +202,7 @@ class AnalyticsTest(unittest.TestCase):
                 # Test prediction is ~20% accurate
                 self.assertFalse(prediction > float(r.value) * 1.2)
                 self.assertFalse(prediction < float(r.value) * 0.8)
+                print(prediction, r.value)
 
             self.assertEqual(analytics._predict_next_watering(
                 poly, 1468810074), 1468810074 + 108000)
