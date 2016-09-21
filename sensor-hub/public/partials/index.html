@@ -14,15 +14,15 @@
         </div>
     </div>
 
-    <div ng-repeat="r in records">
+    <div ng-repeat="r in records.soil_humidity">
         <div class="col-md-4">
             <div class="panel" ng-class="r.header" style="margin: 6px">
                 <div class="panel-heading">
                     <h3 class="panel-title">Sensor {{r.pin_num}}</h3>
                 </div>
                 <div class="panel-body">
-                    <p ng-if="isExpired(data_history[r.pin_num][0].x, 3800)" class="text-danger">
-                        Last update <span am-time-ago="data_history[r.pin_num][0].x"></span>. Check sensor.
+                    <p ng-if="isExpired(data_history.soil_humidity[r.pin_num][0].x, 3800)" class="text-danger">
+                        Last update <span am-time-ago="data_history.soil_humidity[r.pin_num][0].x"></span>. Check sensor.
                     </p>
                     <h2>{{r.value}}</h2>
                     <p>
@@ -35,11 +35,28 @@
                         Toggle graph
                     </button>
                     <div ng-if="visibility[r.pin_num]">
-                        <linechart data="data_history" options="r.options"></linechart>
+                        <linechart data="data_history.soil_humidity" options="r.options"></linechart>
                     </div>
                 </div>
             </div>
         </div>
         <div class="clearfix" ng-if="$index%3==2"></div>
+    </div>
+    <div class="col-md-4">
+        <div class="panel panel-primary"  style="margin: 6px">
+            <div class="panel-heading">
+                <h3 class="panel-title">Temperature</h3>
+            </div>
+            <div class="panel-body">
+                <h2>{{records.dht11.temperature}}°C</h2>
+                <h2>{{records.dht11.rel_humidity}} % relative humidity</h2>
+                <button type="button" class="btn btn-default" ng-click="visibility['dht11'] = !visibility['dht11']">
+                    Toggle graphs
+                </button>
+                <div ng-if="visibility['dht11']">
+                    <linechart data="data_history.dht11" options="data_history.dht11.temperature.options"></linechart>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

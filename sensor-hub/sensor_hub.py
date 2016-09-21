@@ -80,8 +80,8 @@ def get_dht11_history(since_epoch_sec):
         'temperature': [],
         'rel_humidity': []
     }
-    records = Record.query.filter(DHT11Record.timestamp >= since_epoch_sec) \
-        .all()
+    records = DHT11Record.query\
+        .filter(DHT11Record.timestamp >= since_epoch_sec).all()
 
     for r in records:
         history['temperature'].append({'x': r.timestamp, 'y': r.temperature})
