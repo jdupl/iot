@@ -2,11 +2,15 @@ import os
 import json
 import unittest
 import datetime as dt
-import sensor_hub
 import csv
 
 from sqlalchemy import desc
-from sensor_hub import app, db_session, Record
+
+import sensor_hub
+import analytics
+
+from models import Record
+from sensor_hub import app, db_session
 
 
 class HubTest(unittest.TestCase):
@@ -177,7 +181,7 @@ class AnalyticsTest(unittest.TestCase):
         with self.now:
             self.gen_data()
             self.assertEqual(len(self.all_records), 31)
-            actual = sensor_hub._get_last_watering_timestamp(1)
+            actual = analytics._get_last_watering_timestamp(1)
             self.assertEqual(1468810074, actual)
 
     def test_predictions(self):
@@ -187,10 +191,10 @@ class AnalyticsTest(unittest.TestCase):
             records = Record.query.filter(Record.pin_num == 1) \
                 .order_by(desc(Record.timestamp)).all()
             self.assertEqual(21, len(records))
-            poly = sensor_hub._get_polynomial(1, 1468810074)
+            poly = analytics._get_polynomial(1, 1468810074)
 
             for r in self.all_records[:-2]:
-                prediction = sensor_hub._predict_at(
+                prediction = analytics._predict_at(
                     float(r.timestamp), poly, 1468810074)
                 # err = prediction - float(r.value)
                 # print(prediction, r.value, err)
@@ -199,7 +203,7 @@ class AnalyticsTest(unittest.TestCase):
                 self.assertFalse(prediction > float(r.value) * 1.2)
                 self.assertFalse(prediction < float(r.value) * 0.8)
 
-            self.assertEqual(sensor_hub._predict_next_watering(
+            self.assertEqual(analytics._predict_next_watering(
                 poly, 1468810074), 1468810074 + 108000)
 
 

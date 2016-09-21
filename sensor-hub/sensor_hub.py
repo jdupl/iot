@@ -1,61 +1,18 @@
 #!/usr/bin/env python3
+
+# External modules
 import sys
-import datetime as dt
 
 from flask import Flask, request, jsonify
-from sqlalchemy import Column, Integer, func, desc, between
-from sqlalchemy.ext.declarative import declarative_base
-from numpy.polynomial import polynomial
+from sqlalchemy import desc, func
 
-from database import db_session, init_db, init_engine
+# Own modules
+import analytics
+
+from database import db_session, init_db
+from models import Record, DHT11Record
 
 app = Flask(__name__)
-
-Base = declarative_base()
-
-
-class Record(Base):
-    __tablename__ = 'records'
-    query = db_session.query_property()
-
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(Integer)
-    pin_num = Column(Integer)
-    value = Column(Integer)
-
-    def __init__(self, pin_num, value, timestamp=None):
-        self.timestamp = timestamp
-        self.value = 1024 - int(value)
-        self.pin_num = pin_num
-
-    def as_pub_dict(self):
-        return {
-            'timestamp': self.timestamp,
-            'pin_num': self.pin_num,
-            'value': self.value
-        }
-
-
-class DHT11Record(Base):
-    __tablename__ = 'records_dht11'
-    query = db_session.query_property()
-
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(Integer)
-    rel_humidity = Column(Integer)
-    temperature = Column(Integer)
-
-    def __init__(self, temperature, rel_humidity, timestamp=None):
-        self.timestamp = timestamp
-        self.rel_humidity = rel_humidity
-        self.temperature = temperature
-
-    def as_pub_dict(self):
-        return {
-            'timestamp': self.timestamp,
-            'rel_humidity': self.rel_humidity,
-            'temperature': self.temperature
-        }
 
 
 def __bad_request():
@@ -66,31 +23,44 @@ def __to_pub_list(elements):
     return list(map(lambda e: e.as_pub_dict(), elements))
 
 
-@app.route('/api/records/latest', methods=['GET'])
-def get_lastest_records():
+def get_latest_soil_humidity():
+    """Gets latest info about soil humdity and predict waterings.
+    """
+
     pub = []
     records = __to_pub_list(
         Record.query.group_by(Record.pin_num)
         .having(func.max(Record.timestamp)).all())
 
     for r in records:
-        last_watering_timestamp = _get_last_watering_timestamp(r['pin_num'])
+        last_watering_timestamp = analytics\
+            ._get_last_watering_timestamp(r['pin_num'])
 
         if last_watering_timestamp:
-            polyn = _get_polynomial(r['pin_num'], last_watering_timestamp)
+            polyn = analytics._get_polynomial(
+                r['pin_num'], last_watering_timestamp)
 
-            next_watering_timestamp = _predict_next_watering(
+            next_watering_timestamp = analytics._predict_next_watering(
                     polyn, last_watering_timestamp)
 
             r['last_watering_timestamp'] = last_watering_timestamp
             r['next_watering_timestamp'] = next_watering_timestamp
         pub.append(r)
 
-    return jsonify({'records': pub}), 200
+    return pub
 
 
-@app.route('/api/records/<since_epoch_sec>', methods=['GET'])
-def get_records_history(since_epoch_sec):
+def get_lastest_dht11():
+    obj = DHT11Record.query.order_by(desc(DHT11Record.timestamp)).first()
+    if obj:
+        return obj.as_pub_dict()
+
+
+def get_soil_humidity_history(since_epoch_sec):
+    """Gets history of multiple soil humidity sensor.
+    Returns array of histories.
+    """
+
     history = {}
     records = Record.query.filter(Record.timestamp >= since_epoch_sec).all()
 
@@ -99,7 +69,43 @@ def get_records_history(since_epoch_sec):
             history[r.pin_num] = []
 
         history[r.pin_num].append({'x': r.timestamp, 'y': r.value})
-    return jsonify({'history': history}), 200
+
+    return history
+
+
+def get_dht11_history(since_epoch_sec):
+    """Gets history from a single DHT11 sensor."""
+
+    history = {
+        'temperature': [],
+        'rel_humidity': []
+    }
+    records = Record.query.filter(DHT11Record.timestamp >= since_epoch_sec) \
+        .all()
+
+    for r in records:
+        history['temperature'].append({'x': r.timestamp, 'y': r.temperature})
+        history['rel_humidity'].append({'x': r.timestamp, 'y': r.rel_humidity})
+
+    return history
+
+
+@app.route('/api/records/latest', methods=['GET'])
+def get_lastest_records():
+
+    return jsonify({'latest': {
+        'soil_humidity': get_latest_soil_humidity(),
+        'dht11': get_lastest_dht11(),
+    }}), 200
+
+
+@app.route('/api/records/<since_epoch_sec>', methods=['GET'])
+def get_records_history(since_epoch_sec):
+
+    return jsonify({'history': {
+        'soil_humidity': get_soil_humidity_history(since_epoch_sec),
+        'dht11': get_dht11_history(since_epoch_sec)
+    }}), 200
 
 
 @app.route('/api/records', methods=['POST'])
@@ -131,68 +137,18 @@ def add_record():
                                       timestamp=timestamp)
                 db_session.add(dht11_r)
 
-            db_session.commit()
-
+        db_session.commit()
         return 'ok', 200
     except Exception:
         return __bad_request()
-
-
-def _get_last_watering_timestamp(pin_num):
-    records = Record.query.filter(Record.pin_num == pin_num) \
-        .order_by(desc(Record.timestamp)).limit(500).all()
-    watering_thresold = 100  # Minimum fluctuation to consider a watering
-    last_record = records[0]
-
-    for current in records[1:]:
-
-        if current.value < last_record.value \
-         and last_record.value - current.value >= watering_thresold:
-            return last_record.timestamp
-        last_record = current
-
-
-def _get_polynomial(pin_num, start, stop=dt.datetime.now()):
-    records = Record.query \
-        .filter(Record.pin_num == pin_num) \
-        .filter(between(Record.timestamp, start, stop)) \
-        .order_by(Record.timestamp).all()
-    x = []
-    y = []
-
-    for r in records:
-        x.append((r.timestamp - start))
-        y.append(int(r.value))
-
-    if len(x) > 0:
-        return polynomial.polyfit(x, y, 1)
-
-
-def _predict_at(at_time, polynom, last_watering_timestamp):
-    return polynomial.polyval((at_time - last_watering_timestamp), polynom)
-
-
-def _predict_next_watering(polynom, last_watering_timestamp):
-    max_tries = 168  # One week
-    step = 3600  # Step in seconds
-    val = 0
-    time = 0
-    tries = 0
-
-    while tries <= max_tries:
-        val = polynomial.polyval(time, polynom)
-        if val <= 50:
-            return time + last_watering_timestamp
-        time += step
-        tries += 1
 
 
 def setup(env=None):
     app.config.from_pyfile('config/default.py')
     app.config.from_pyfile('config/%s.py' % env, silent=True)
 
-    init_engine(app.config['DATABASE_URI'])
-    init_db(Base)
+    init_db(app.config['DATABASE_URI'])
+
     return app
 
 if __name__ == '__main__':
