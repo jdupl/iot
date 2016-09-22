@@ -77,6 +77,7 @@ class Schedule():
             last = t
             o_time = t
             c_time = add_delta_to_rel_time(t, run_for)
+
             self.open_events.append(o_time)
             self.close_events.append(c_time)
 
@@ -86,8 +87,8 @@ class Schedule():
                 break
 
     def get_latest_event(self, now):
-        open_event = self._get_latest_event(self.open_times, 'on')
-        close_event = self._get_latest_event(self.close_times, 'off')
+        open_event = self._get_latest_event(self.open_events, 'on')
+        close_event = self._get_latest_event(self.close_events, 'off')
 
         if open_event > close_event:
             return open_event
@@ -111,8 +112,8 @@ class Schedule():
                     return (today_t, status)
 
     def get_next_event(self, now):
-        open_event = self._get_next_event(self.open_times, 'on')
-        close_event = self._get_next_event(self.close_times, 'off')
+        open_event = self._get_next_event(self.open_events, 'on')
+        close_event = self._get_next_event(self.close_events, 'off')
 
         if open_event < close_event:
             return open_event

@@ -78,48 +78,59 @@ class ScheduleTest(unittest.TestCase):
         self.assertEqual(s.close_events, [dt.time(6, 0, 1), dt.time(14, 13, 5),
                                           dt.time(22, 26, 9)])
 
-    # def test_get_events_from_each(self):
-    #     start_times = relays.each(1, start_at=dt.time(4, 0, 0))
-    #     close_times = relays.each(1, start_at=dt.time(4, 30, 0))
-    #     s = Schedule([22], start_times, close_times)
-    #
-    #     with mock_datetime(2016, 5, 30, 3, 58):
-    #         self.assertEqual(s.get_next_event(now=dt.datetime.now()),
-    #                          (dt.datetime(2016, 5, 30, 4, 0), 'on'))
-    #
-    #         self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
-    #                          (dt.datetime(2016, 5, 29, 23, 30), 'off'))
-    #
-    #     with mock_datetime(2016, 5, 30, 4, 1):
-    #         self.assertEqual(s.get_next_event(now=dt.datetime.now()),
-    #                          (dt.datetime(2016, 5, 30, 4, 30), 'off'))
-    #
-    #         self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
-    #                          (dt.datetime(2016, 5, 30, 4, 0), 'on'))
-    #
-    #     with mock_datetime(2016, 5, 30, 4, 59):
-    #         self.assertEqual(s.get_next_event(now=dt.datetime.now()),
-    #                          (dt.datetime(2016, 5, 30, 5, 0), 'on')
-    #                          )
-    #
-    #         self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
-    #                          (dt.datetime(2016, 5, 30, 4, 30), 'off'))
-    #
-    #     with mock_datetime(2016, 5, 30, 6, 1):
-    #         self.assertEqual(s.get_next_event(now=dt.datetime.now()),
-    #                          (dt.datetime(2016, 5, 30, 6, 30), 'off')
-    #                          )
-    #
-    #         self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
-    #                          (dt.datetime(2016, 5, 30, 6, 0), 'on'))
-    #
-    #     with mock_datetime(2016, 5, 30, 16, 50):
-    #         self.assertEqual(s.get_next_event(now=dt.datetime.now()),
-    #                          (dt.datetime(2016, 5, 30, 17, 0), 'on')
-    #                          )
-    #
-    #         self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
-    #                          (dt.datetime(2016, 5, 30, 16, 30), 'off'))
+    def test_get_events_from_simple_schedule(self):
+        with mock_datetime(2016, 5, 1, 5, 1):
+            # No repeat, opens at 5:00 closes at 6:00
+            s = Schedule(14, (5, 0, 0), (1, 0, 0))
+
+            self.assertEqual(
+                s.get_latest_event(now=dt.datetime.now()),
+                (dt.datetime(2016, 5, 1, 5, 0), 'on'))
+
+            self.assertEqual(
+                s.get_next_event(now=dt.datetime.now()),
+                (dt.datetime(2016, 5, 1, 6, 0), 'off'))
+
+    def test_get_events_from_repeating_schedule_with_limits(self):
+        # TODO
+        pass
+
+    def test_get_events_from_repeating_schedule(self):
+        s = Schedule(14, (4, 0, 0), (0, 30, 0), (1, 0, 0))
+
+        with mock_datetime(2016, 5, 30, 3, 58):
+            self.assertEqual(s.get_next_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 4, 0), 'on'))
+            self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 29, 23, 30), 'off'))
+
+        with mock_datetime(2016, 5, 30, 4, 1):
+            self.assertEqual(s.get_next_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 4, 30), 'off'))
+
+            self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 4, 0), 'on'))
+
+        with mock_datetime(2016, 5, 30, 4, 59):
+            self.assertEqual(s.get_next_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 5, 0), 'on'))
+
+            self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 4, 30), 'off'))
+
+        with mock_datetime(2016, 5, 30, 6, 1):
+            self.assertEqual(s.get_next_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 6, 30), 'off'))
+
+            self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 6, 0), 'on'))
+
+        with mock_datetime(2016, 5, 30, 16, 50):
+            self.assertEqual(s.get_next_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 17, 0), 'on'))
+
+            self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
+                             (dt.datetime(2016, 5, 30, 16, 30), 'off'))
 
 
 if __name__ == '__main__':
