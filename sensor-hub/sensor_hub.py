@@ -40,8 +40,8 @@ def get_latest_soil_humidity():
             polyn = analytics._get_polynomial(
                 r['pin_num'], last_watering_timestamp)
 
-            next_watering_timestamp = analytics._predict_next_watering(
-                    polyn, last_watering_timestamp)
+            next_watering_timestamp = analytics\
+                ._predict_next_watering(polyn, last_watering_timestamp)
 
             r['last_watering_timestamp'] = last_watering_timestamp
             r['next_watering_timestamp'] = next_watering_timestamp
