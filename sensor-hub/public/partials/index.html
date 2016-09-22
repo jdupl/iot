@@ -51,10 +51,10 @@
                 <h2>{{records.dht11.temperature}}°C</h2>
                 <h2>{{records.dht11.rel_humidity}} % relative humidity</h2>
                 <button type="button" class="btn btn-default" ng-click="visibility['dht11'] = !visibility['dht11']">
-                    Toggle graphs
+                    Toggle graph
                 </button>
                 <div ng-if="visibility['dht11']">
-                    <linechart data="data_history.dht11" options="data_history.dht11.temperature.options"></linechart>
+                    <linechart data="data_history.dht11" options="genOptsDht11()"></linechart>
                 </div>
             </div>
         </div>
