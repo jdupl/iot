@@ -3,6 +3,7 @@ var controllers = angular.module('app.controllers.IndexController', ['ui.bootstr
 controllers.controller('IndexController', function($scope, $http, $interval) {
     $scope.alerts = [];
     $scope.visibility = [];
+    $scope.options = {'dht11': genOptsDht11()};
 
     function genOpts (pin) {
         return {
@@ -22,7 +23,7 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
         };
     }
 
-    $scope.genOptsDht11 = function () {
+    function genOptsDht11 () {
         return {
           margin: {top: 18},
           series: [
