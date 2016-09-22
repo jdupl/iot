@@ -34,7 +34,7 @@
                     <button type="button" class="btn btn-default" ng-click="visibility[r.pin_num] = !visibility[r.pin_num]">
                         Toggle graph
                     </button>
-                    <div ng-if="visibility[r.pin_num]">
+                    <div ng-if="visibility[r.pin_num]" class="graph-container">
                         <linechart data="data_history.soil_humidity" options="r.options"></linechart>
                     </div>
                 </div>
@@ -53,8 +53,8 @@
                 <button type="button" class="btn btn-default" ng-click="visibility['dht11'] = !visibility['dht11']">
                     Toggle graph
                 </button>
-                <div ng-if="visibility['dht11']">
-                    <linechart data="data_history.dht11" options="genOptsDht11()"></linechart>
+                <div ng-if="visibility['dht11']" class="graph-container">
+                    <linechart data="data_history.dht11" options="options['dht11']"></linechart>
                 </div>
             </div>
         </div>
