@@ -22,7 +22,7 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
         };
     }
 
-    function genOptsDht11Temp () {
+    $scope.genOptsDht11 = function () {
         return {
           margin: {top: 18},
           series: [
@@ -31,27 +31,18 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
               dataset: 'temperature',
               key: "y",
               label: "Temperature",
-              color: "#1f77b4",
+              color: "#c33a0f",
               type: ['line', 'dot'],
               id: 'DHT11 temp'
-            }
-          ],
-          axes: {x: {key: "x", type: "date"}}
-        };
-    }
-
-    function genOptsDht11Humidity () {
-        return {
-          margin: {top: 18},
-          series: [
+          },
             {
-              axis: "y",
+              axis: "y2",
               dataset: 'rel_humidity',
               key: "y",
-              label: "Relative Humidity",
+              label: "Relative humidity",
               color: "#1f77b4",
               type: ['line', 'dot'],
-              id: 'DHT11 rel_humidity'
+              id: 'DHT11 humidity'
             }
           ],
           axes: {x: {key: "x", type: "date"}}
@@ -92,8 +83,6 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
                 $scope.records.soil_humidity[i].header = 'panel-' + getHeaderForValue($scope.records.soil_humidity[i].value);
                 $scope.records.soil_humidity[i].options = genOpts($scope.records.soil_humidity[i].pin_num);
               }
-              $scope.data_history.dht11.temperature.options = genOptsDht11Temp();
-              $scope.data_history.dht11.rel_humidity.options = genOptsDht11Humidity();
             })
             .error(function(err, status) {
                 console.log(err, status);

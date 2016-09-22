@@ -136,13 +136,14 @@ bool epochNeedsUpdate() {
 }
 
 bool getDHT11Measure() {
-    int maxTries = 20;
+    int maxTries = 5;
     int tries = 0;
 
     while(tries++ < maxTries) {
         if (DHT11.read(DHT11_PIN) == DHTLIB_OK) {
             return true;
         }
+        delay(500);
     }
     return false;
 }
