@@ -6,7 +6,7 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
     $scope.options = {'dht11': genOptsDht11()};
 
     function genOpts (pin) {
-        return {
+        $scope.options[pin] = {
           margin: {top: 18},
           series: [
             {
@@ -82,7 +82,10 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
 
               for (var i = 0; i < $scope.records.soil_humidity.length; i++) {
                 $scope.records.soil_humidity[i].header = 'panel-' + getHeaderForValue($scope.records.soil_humidity[i].value);
-                $scope.records.soil_humidity[i].options = genOpts($scope.records.soil_humidity[i].pin_num);
+                var pinNumStr = '' + $scope.records.soil_humidity[i].pin_num;
+                if (!$scope.options.hasOwnProperty(pinNumStr)) {
+                    genOpts(''+$scope.records.soil_humidity[i].pin_num);
+                }
               }
             })
             .error(function(err, status) {
