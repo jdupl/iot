@@ -35,7 +35,7 @@
                         Toggle graph
                     </button>
                     <div ng-if="visibility[r.pin_num]" class="graph-container">
-                        <linechart data="data_history.soil_humidity" options="r.options"></linechart>
+                        <linechart data="data_history.soil_humidity" options="options[r.pin_num]"></linechart>
                     </div>
                 </div>
             </div>
