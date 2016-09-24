@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-
-# External modules
 import sys
+import atexit
+import threading
+import requests
 
 from flask import Flask, request, jsonify
 from sqlalchemy import desc, func
@@ -11,6 +12,11 @@ import analytics
 
 from database import db_session, init_db
 from models import Record, DHT11Record
+
+POOL_TIME = 5  # Seconds
+relays = []
+dataLock = threading.Lock()
+relays_updater = threading.Thread()
 
 app = Flask(__name__)
 
@@ -90,14 +96,17 @@ def get_dht11_history(since_epoch_sec):
     return history
 
 
+def _get_relays():
+    global dataLock
+    global relays
+
+    with dataLock:
+        return relays
+
+
 @app.route('/api/relays', methods=['GET'])
 def get_relays():
-
-    return jsonify({'relays': [
-    {'uuid': 1, 'name': 'light1'},
-    {'uuid': 1},
-    {'uuid': 1},
-    ]}), 200
+    return jsonify({'relays': _get_relays()}), 200
 
 
 @app.route('/api/records/latest', methods=['GET'])
@@ -153,13 +162,51 @@ def add_record():
         return __bad_request()
 
 
+def _get_new_relays(relays_ip):
+    r = requests.get('http://%s/api/relays' % relays_ip)
+
+    if r.status_code == 200:
+        return r.json()
+    else:
+        print(r.status_code)
+
+
 def setup(env=None):
+
+    def interrupt():
+        global relays_updater
+        relays_updater.cancel()
+
+    def update_relays():
+        global relays
+        global relays_updater
+
+        try:
+            new_relays = _get_new_relays('localhost:8080')
+            if new_relays:
+                with dataLock:
+                    relays = new_relays
+        except Exception as e:
+            print(e)
+
+        # Setup next execution
+        relays_updater = threading.Timer(POOL_TIME, update_relays, ())
+        relays_updater.start()
+
+    def do_update_relays():
+        global relays_updater
+        relays_updater = threading.Timer(POOL_TIME, update_relays, ())
+        relays_updater.start()
+
     app.config.from_pyfile('config/default.py')
     app.config.from_pyfile('config/%s.py' % env, silent=True)
 
     init_db(app.config['DATABASE_URI'])
 
+    do_update_relays()
+    atexit.register(interrupt)
+
     return app
 
 if __name__ == '__main__':
-    setup(sys.argv[1] if len(sys.argv) > 1 else None).run()
+    setup(sys.argv[1] if len(sys.argv) > 1 else None).run(use_reloader=False)
