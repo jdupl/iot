@@ -1,4 +1,5 @@
 import time
+import yaml
 import datetime as dt
 
 GPIO = None
@@ -201,7 +202,22 @@ def each(hours, start_at=dt.time(0, 0, 0), max_iterations=24):
 
     return times
 
+
+def read_config():
+    config = {}
+    with open('config/default.yaml', 'r') as f:
+        yaml_cfg = yaml.load(f.read())
+
+    for node in yaml_cfg:
+        start_at = node['start_at'].split(':')
+        run_for = node['run_for'].split(':')
+        Schedule(node['name'])
+
+
+
 if __name__ == '__main__':
+    read_config()
+    exit(0)
     import RPi.GPIO as GPIO
     try:
         veg_light_pins = [24, 27]  # GPIO pins of the lights (BCM)

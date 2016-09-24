@@ -90,6 +90,16 @@ def get_dht11_history(since_epoch_sec):
     return history
 
 
+@app.route('/api/relays', methods=['GET'])
+def get_relays():
+
+    return jsonify({'relays': [
+    {'uuid': 1, 'name': 'light1'},
+    {'uuid': 1},
+    {'uuid': 1},
+    ]}), 200
+
+
 @app.route('/api/records/latest', methods=['GET'])
 def get_lastest_records():
 

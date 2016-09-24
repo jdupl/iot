@@ -1,0 +1,5 @@
+-
+  name: Veg lights
+  gpio_bcm_pins: [24, 27]
+  start_at: 5:0:0
+  run_for: 19:0:0
