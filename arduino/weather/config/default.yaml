@@ -1,0 +1,20 @@
+hygrometer_pins: [7, 6, 5, 4, 3, 2, 1, 0] # Analog pins
+update_delay: 1800 # Update every n seconds
+
+digital_pins:
+    relay: 4
+    red_led: 5
+    green_led: 6
+    dht_11: 2
+
+esp_board: # Digital pins
+    rx: 2
+    tx: 3
+
+wifi:
+    ssid: your_ssid
+    password: your_password
+
+sensor_hub:
+    ip: ip_or_domain
+    port: 80
