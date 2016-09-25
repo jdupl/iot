@@ -10,6 +10,7 @@ Group=pi
 ExecStart=python3 /home/pi/iot/relays/relays.py
 StandardOutput=syslog
 StandardError=syslog
+WorkingDirectory= /home/pi/iot/relays/
 
 [Install]
 WantedBy=multi-user.target
