@@ -189,20 +189,6 @@ def control_relays(schedules):
         time.sleep(1)  # Overflow next schedule
 
 
-def each(hours, start_at=dt.time(0, 0, 0), max_iterations=24):
-    times = []
-    time = start_at
-    t_hour = time.hour
-
-    while t_hour < 24 and \
-            (max_iterations > 0 and max_iterations > len(times)):
-        t = dt.time(t_hour, time.minute, time.second)
-        times.append(t)
-        t_hour = time.hour + (hours) * (len(times))
-
-    return times
-
-
 def read_config(config_path='config/default.yaml'):
     with open(config_path, 'r') as f:
         yaml_cfg = yaml.load(f.read())
