@@ -203,41 +203,27 @@ def each(hours, start_at=dt.time(0, 0, 0), max_iterations=24):
     return times
 
 
-def read_config():
-    config = {}
-    with open('config/default.yaml', 'r') as f:
+def read_config(config_path='config/default.yaml'):
+    with open(config_path, 'r') as f:
         yaml_cfg = yaml.load(f.read())
+    s = []
 
     for node in yaml_cfg:
-        start_at = node['start_at'].split(':')
-        run_for = node['run_for'].split(':')
-        Schedule(node['name'])
+        repeat_every = None
+        start_at = [int(i) for i in node['start_at'].split(':')]
+        run_for = [int(i) for i in node['run_for'].split(':')]
 
+        if 'repeat_every' in node:
+            repeat_every = [int(i) for i in node['repeat_every'].split(':')]
 
+        s.append(
+            Schedule(node['gpio_bcm_pins'], start_at, run_for, repeat_every))
+    return s
 
 if __name__ == '__main__':
-    read_config()
-    exit(0)
     import RPi.GPIO as GPIO
     try:
-        veg_light_pins = [24, 27]  # GPIO pins of the lights (BCM)
-        veg_light_schedule = Schedule(veg_light_pins,
-                                      [dt.time(5, 0, 0)], [dt.time(23, 55, 0)])
-
-        bloom_light_pins = [23]  # GPIO pins of the lights (BCM)
-        bloom_light_schedule = Schedule(bloom_light_pins, [dt.time(8, 0, 0)],
-                                        [dt.time(20, 0, 0)])
-
-        fan_schedule_1 = Schedule([22],  # GPIO pins of the fans (BCM)
-                                  each(1, start_at=dt.time(5, 50, 0)),
-                                  each(1, start_at=dt.time(5, 55, 0)))
-
-        fan_schedule_2 = Schedule([25],  # GPIO pins of the fans (BCM)
-                                  each(1, start_at=dt.time(5, 55, 0)),
-                                  each(1, start_at=dt.time(6, 0, 0)))
-
-        control_relays([bloom_light_schedule, veg_light_schedule,
-                        fan_schedule_1, fan_schedule_2])
+        control_relays(read_config())
 
     except KeyboardInterrupt:
         print('Got KeyboardInterrupt.')

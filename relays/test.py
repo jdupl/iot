@@ -2,6 +2,7 @@ import datetime as dt
 import unittest
 
 from relays import Schedule
+import relays
 
 
 class mock_datetime(object):
@@ -31,6 +32,43 @@ class mock_datetime(object):
 
     def __exit__(self, *args, **kwargs):
         dt.datetime = self.original_datetime
+
+
+class ConfigTest(unittest.TestCase):
+
+    def test_get_schedule_from_config(self):
+        actuals = relays.read_config('fixtures/test_config_simple.yaml')
+
+        expected = Schedule([14], (5, 0, 0), (1, 0, 0))
+        actual = actuals[0]
+
+        self.assertEqual(expected.pins, actual.pins)
+        self.assertEqual(expected.open_events, actual.open_events)
+        self.assertEqual(expected.close_events, actual.close_events)
+
+        expected = Schedule([23, 12], (8, 0, 0), (12, 0, 0))
+        actual = actuals[1]
+
+        self.assertEqual(expected.pins, actual.pins)
+        self.assertEqual(expected.open_events, actual.open_events)
+        self.assertEqual(expected.close_events, actual.close_events)
+
+    def test_get_schedule_from_config_repeating(self):
+        actuals = relays.read_config('fixtures/test_config_repeating.yaml')
+
+        expected = Schedule([14, 76], (5, 0, 0), (0, 5, 0), (1, 0, 0))
+        actual = actuals[0]
+
+        self.assertEqual(expected.pins, actual.pins)
+        self.assertEqual(expected.open_events, actual.open_events)
+        self.assertEqual(expected.close_events, actual.close_events)
+
+        expected = Schedule([23, 12], (8, 0, 0), (0, 0, 30), (0, 30, 0))
+        actual = actuals[1]
+
+        self.assertEqual(expected.pins, actual.pins)
+        self.assertEqual(expected.open_events, actual.open_events)
+        self.assertEqual(expected.close_events, actual.close_events)
 
 
 class ScheduleTest(unittest.TestCase):
