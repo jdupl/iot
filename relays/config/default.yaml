@@ -1,14 +1,16 @@
 -
   name: Veg lights
-  gpio_bcm_pins: [24, 27]
+  gpio_bcm_pins: [24, 26, 27]
   start_at: '5:0:0'
   run_for: '19:0:0'
+  uuid: 1
 
 -
   name: Bloom lights
   gpio_bcm_pins: [23]
   start_at: '8:0:0'
   run_for: '12:0:0'
+  uuid: 2
 
 -
   name: Fan system 1
@@ -16,6 +18,7 @@
   start_at: '5:0:0'
   run_for: '0:5:0'
   repeat_every: '1:0:0'
+  uuid: 3
 
 -
   name: Fan system 2
@@ -23,3 +26,4 @@
   start_at: '5:5:0'
   run_for: '0:5:0'
   repeat_every: '1:0:0'
+  uuid: 4
