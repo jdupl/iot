@@ -1,8 +1,21 @@
+import sys
 import time
 import yaml
+import atexit
+import threading
 import datetime as dt
 
+from threading import Thread
+from flask import Flask, jsonify
+
+from unittest.mock import MagicMock  # used to fake gpio lib
+
 GPIO = None
+relays = []
+dataLock = threading.Lock()
+relays_updater = threading.Thread()
+
+app = Flask(__name__)
 
 
 def time_to_datetime(t, datetime_base):
@@ -231,15 +244,41 @@ def read_config(config_path='config/default.yaml'):
             Schedule(s_pins, start_at, run_for, repeat_every))
     return s
 
-if __name__ == '__main__':
-    import RPi.GPIO as GPIO
-    try:
-        control_relays(read_config())
+# if __name__ == '__main__':
 
-    except KeyboardInterrupt:
-        print('Got KeyboardInterrupt.')
-    except Exception as e:
-        print('Got unexpected fatal Exception: %s' % str(e))
-    finally:
-        # Reset GPIO
-        GPIO.cleanup()
+
+def setup(env=None):
+
+    def interrupt():
+        global relays_updater
+        relays_updater.stop()
+
+    def update_relays():
+        global relays_updater
+        if env != 'dev':
+            import RPi.GPIO as GPIO
+        else:
+            GPIO = MagicMock()
+
+        try:
+            control_relays(read_config())
+        except KeyboardInterrupt:
+            print('Got KeyboardInterrupt.')
+        except Exception as e:
+            print('Got unexpected fatal Exception: %s' % str(e))
+        finally:
+            # Reset GPIO
+            GPIO.cleanup()
+
+    app.config.from_pyfile('config/default.py')
+    app.config.from_pyfile('config/%s.py' % env, silent=True)
+
+    global relays_updater
+    relays_updater = Thread(target=update_relays)
+    relays_updater.start()
+    atexit.register(interrupt)
+
+    return app
+
+if __name__ == '__main__':
+    setup(sys.argv[1] if len(sys.argv) > 1 else None).run(use_reloader=False)
