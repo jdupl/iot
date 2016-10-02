@@ -1,5 +1,6 @@
 import datetime as dt
 import unittest
+from unittest.mock import MagicMock
 
 from relays import Schedule, Pin
 import relays
@@ -41,7 +42,6 @@ class ConfigTest(unittest.TestCase):
 
         expected = Schedule([Pin(14)], (5, 0, 0), (1, 0, 0))
         actual = actuals[0]
-        print(actual.pins)
 
         self.assertEqual(expected.pins, actual.pins)
         self.assertEqual(expected.open_events, actual.open_events)
@@ -172,6 +172,38 @@ class ScheduleTest(unittest.TestCase):
             self.assertEqual(s.get_latest_event(now=dt.datetime.now()),
                              (dt.datetime(2016, 5, 30, 16, 30), 'off'))
 
+
+class PinTest(unittest.TestCase):
+
+    def before(self):
+        pass
+
+    def test_pins_on_auto_have_their_state_updated(self):
+        gpio = MagicMock()
+        gpio.output = MagicMock()
+        relays.GPIO = gpio
+
+        pin1 = Pin(14)
+        pin2 = Pin(15)
+        relays.update_pins_on_auto([pin1, pin2], 'on')
+
+        assert gpio.output.call_count == 2
+        assert pin1.state_str == 'on'
+        assert pin2.state_str == 'on'
+
+    def test_pins_on_override_dont_have_their_state_updated(self):
+        gpio = MagicMock()
+        gpio.output = MagicMock()
+        relays.GPIO = gpio
+
+        pin1 = Pin(14)
+        pin1.on_user_override = True
+        pin2 = Pin(15)
+
+        relays.update_pins_on_auto([pin1, pin2], 'on')
+        assert gpio.output.call_count == 1
+        assert pin1.state_str == 'off'
+        assert pin2.state_str == 'on'
 
 if __name__ == '__main__':
     unittest.main()

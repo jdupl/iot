@@ -47,13 +47,14 @@ class Pin():
             self.state_str == o.state_str
 
     def apply_state(self, state_str):
-        #  'on' is 0 on normally closed relay
+        # 'on' is 0 on normally closed relay
         gpio_val = 1 if state_str == 'off' else 0
         try:
-            GPIO.output(pin, gpio_val)
+            GPIO.output(self.bcm_pin_num, gpio_val)
 
             self.state_str = state_str
-            print('Pin %d is now %s (%d)' % (pin, state_str, gpio_val))
+            print('Pin %d is now %s (%d)' % (self.bcm_pin_num,
+                                             state_str, gpio_val))
         except Exception as e:
             print('Problem while changing pin %d status: '
                   % self.bcm_pin_num, e)
@@ -160,16 +161,15 @@ class Schedule():
 
 
 def update_pins_on_auto(pins, state_str):
-    # Yes, relay on needs gpio value 0
     for pin in pins:
+        # Yes, relay 'on' needs gpio value 0
         gpio_val = 1 if state_str == 'off' else 0
 
-        for pin in pins:
-            if pin.on_user_override:
-                print('Pin %d is on user_override. Keeping current state.'
-                      % pin.bcm_pin_num)
-            else:
-                pin.apply_state(state_str)
+        if pin.on_user_override:
+            print('Pin %d is on user_override. Keeping current state.'
+                  % pin.bcm_pin_num)
+        else:
+            pin.apply_state(state_str)
 
 
 def setup_pins(pins):
