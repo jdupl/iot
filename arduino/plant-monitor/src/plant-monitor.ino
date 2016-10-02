@@ -12,12 +12,15 @@ const String password = "changeme"; // wifi_password
 const String serverIp = "changeme"; // sensor_hub_ip
 const String serverPort = "changeme"; // sensor_hub_port
 
+const String uuid = "changeme"; // arduino_uuid
+
 const unsigned long updateDelay = changeme; // update_delay
-const int sensorPins[] = {changeme}; // hygrometer_pins
+const int hygrometerPins[] = {changeme}; // hygrometer_pins
+const int photocellPins[] = {changeme}; // photocell_pins
+const int dht11Pins[] = {changeme}; // dht11_pins
 
 // Open circuit with relay when sensors are not in use to reduce oxidation
 const int RELAY_PIN = changeme; // digital_pins_relay
-const int DHT11_PIN = changeme; // digital_pins_dht_11
 const int RED_LED_PIN = changeme; // digital_pins_red_led
 const int GREEN_LED_PIN = changeme; // digital_pins_green_led
 
@@ -135,12 +138,12 @@ bool epochNeedsUpdate() {
     return (epochInit + expire > getEpoch() || epochInit == 0);
 }
 
-bool getDHT11Measure() {
+bool getDHT11Measure(int pin) {
     int maxTries = 5;
     int tries = 0;
 
     while(tries++ < maxTries) {
-        if (DHT11.read(DHT11_PIN) == DHTLIB_OK) {
+        if (DHT11.read(pin) == DHTLIB_OK) {
             return true;
         }
         delay(500);
@@ -148,16 +151,43 @@ bool getDHT11Measure() {
     return false;
 }
 
+String getPhotoCellReqContent() {
+    String content = "";
+    for (int i = 0; i < sizeof(photocellPins) / sizeof(int); i++) {
+        String id = "photocell_" + (String) photocellPins[i];
+        content += ',' + id + ':' + String(analogRead(photocellPins[i]));
+    }
+    return content;
+}
+
+
+String getDHT11ReqContent() {
+    String content = "";
+    for (int i = 0; i < sizeof(dht11Pins) / sizeof(int); i++) {
+
+        if (getDHT11Measure(dht11Pins[i])) {
+            String id = "dht11_" + (String) dht11Pins[i];
+            content += ',' + id + ':' + String(DHT11.temperature) + ';' + String(DHT11.humidity);
+        }
+    }
+    return content;
+}
+
+String getHygrometerReqContent() {
+    String content = "";
+    for (int i = 0; i < sizeof(hygrometerPins) / sizeof(int); i++) {
+        String id = "hygro_" + (String) hygrometerPins[i];
+        content += ',' + id + ':' + String(analogRead(hygrometerPins[i]));
+    }
+    return content;
+}
 
 String buildRequestContent() {
     String content =  ((String) getEpoch());
-    for (int i = 0; i < sizeof(sensorPins) / sizeof(int); i++) {
-        content += ',' + (String) sensorPins[i] + ':' + String(analogRead(sensorPins[i]));
-    }
-    if (getDHT11Measure()) {
-        content += ",dht11_temp:" + String(DHT11.temperature);
-        content += ",dht11_humidity:" + String(DHT11.humidity);
-    }
+    content += ',' + uuid;
+    content += getDHT11ReqContent();
+    content += getHygrometerReqContent();
+    content += getPhotoCellReqContent();
     return content;
 }
 

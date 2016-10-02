@@ -1,11 +1,14 @@
-hygrometer_pins: [7, 6, 5, 4, 3, 2, 1, 0] # Analog pins
+hygrometer_pins: [3, 2, 1, 0] # Analog pins
+photocell_pins: [7] # Analog pins
+dht11_pins: [5, 6] # Digital pins
+
 update_delay: 1800 # Update every n seconds
+arduino_uuid: a_uuid
 
 digital_pins:
     relay: 4
     red_led: 5
     green_led: 6
-    dht_11: 2
 
 esp_board: # Digital pins
     rx: 11
