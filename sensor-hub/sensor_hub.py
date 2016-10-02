@@ -15,7 +15,6 @@ from models import Record, DHT11Record
 
 POOL_TIME = 5  # Seconds
 relays = []
-dataLock = threading.Lock()
 relays_updater = threading.Thread()
 
 app = Flask(__name__)
@@ -97,11 +96,8 @@ def get_dht11_history(since_epoch_sec):
 
 
 def _get_relays():
-    global dataLock
     global relays
-
-    with dataLock:
-        return relays
+    return relays
 
 
 @app.route('/api/relays', methods=['GET'])
@@ -171,8 +167,12 @@ def _get_new_relays(relays_ip):
         print(r.status_code)
 
 
-def setup(env=None):
+def interrupt():
+    global relays_updater
+    relays_updater.cancel()
 
+
+def setup(env=None):
     def interrupt():
         global relays_updater
         relays_updater.cancel()
@@ -182,10 +182,10 @@ def setup(env=None):
         global relays_updater
 
         try:
-            new_relays = _get_new_relays('localhost:8080')
-            if new_relays:
-                with dataLock:
-                    relays = new_relays
+            new_relays = []
+            if env != 'test':
+                new_relays = _get_new_relays('localhost:8080')
+                relays = new_relays
         except Exception as e:
             print(e)
 
