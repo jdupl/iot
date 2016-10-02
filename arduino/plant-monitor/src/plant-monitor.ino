@@ -175,10 +175,16 @@ String getDHT11ReqContent() {
 
 String getHygrometerReqContent() {
     String content = "";
+    // Close close sensors circuit
+    digitalWrite(RELAY_PIN, 0);
+    delay(100);
     for (int i = 0; i < sizeof(hygrometerPins) / sizeof(int); i++) {
         String id = "hygro_" + (String) hygrometerPins[i];
         content += ',' + id + ':' + String(analogRead(hygrometerPins[i]));
     }
+    // Open close sensors circuit
+    digitalWrite(RELAY_PIN, 1);
+
     return content;
 }
 
@@ -194,13 +200,7 @@ String buildRequestContent() {
 bool update() {
     unsigned long measuredAt = getEpoch();
 
-    // Close close sensors circuit
-    digitalWrite(RELAY_PIN, 0);
-    delay(250);
     String content = buildRequestContent();
-    // Open close sensors circuit
-    digitalWrite(RELAY_PIN, 1);
-
     String request = "POST /api/records HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
 
     if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\"," + serverPort, "OK", 5000))
