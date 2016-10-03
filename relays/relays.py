@@ -36,13 +36,36 @@ def tuple_to_timedelta(t):
     return dt.timedelta(hours=t[0], minutes=t[1], seconds=t[2])
 
 
+class Pin():
+    def __init__(self, bcm_pin_num, user_override=False):
+        self.bcm_pin_num = bcm_pin_num
+        self.state_str = 'off'
+        self.on_user_override = user_override
+
+    def __eq__(self, o):
+        return self.bcm_pin_num == o.bcm_pin_num and \
+            self.state_str == o.state_str
+
+    def apply_state(self, state_str):
+        #  'on' is 0 on normally closed relay
+        gpio_val = 1 if state_str == 'off' else 0
+        try:
+            GPIO.output(pin, gpio_val)
+
+            self.state_str = state_str
+            print('Pin %d is now %s (%d)' % (pin, state_str, gpio_val))
+        except Exception as e:
+            print('Problem while changing pin %d status: '
+                  % self.bcm_pin_num, e)
+
+
 class Schedule():
     """Represents daily events schedule for relays."""
 
     def __init__(self, pins, open_time, run_for, repeat_every=None,
                  repeat_until=None):
         """
-        pins: GPIO BCM pins to control
+        pins: Pin objects to control
         open_time: First open time of the day
         run_for: Keep open for this amount of time (tuple of (h, m, s))
         repeat_every: Repeat each amount of time (tuple of (h, m, s)) or 'None'
@@ -136,20 +159,23 @@ class Schedule():
             return (tommorow_t, status)
 
 
-def set_relay(pins, state_str):
+def update_pins_on_auto(pins, state_str):
     # Yes, relay on needs gpio value 0
     for pin in pins:
         gpio_val = 1 if state_str == 'off' else 0
 
         for pin in pins:
-            print('Pin %d is now %s (%d)' % (pin, state_str, gpio_val))
-            GPIO.output(pin, gpio_val)
+            if pin.on_user_override:
+                print('Pin %d is on user_override. Keeping current state.'
+                      % pin.bcm_pin_num)
+            else:
+                pin.apply_state(state_str)
 
 
 def setup_pins(pins):
     for pin in pins:
         # Off
-        GPIO.setup(pin, GPIO.OUT, initial=1)
+        GPIO.setup(pin.bcm_pin_num, GPIO.OUT, initial=1)
 
 
 def control_and_sleep(schedules):
@@ -158,7 +184,7 @@ def control_and_sleep(schedules):
 
     for schedule in schedules:
         wanted_state = schedule.get_latest_event(now)[1]
-        set_relay(schedule.pins, wanted_state)
+        update_pins_on_auto(schedule.pins, wanted_state)
 
     next_change_in = get_sleep_for(schedules, dt.datetime.now())
 
@@ -201,9 +227,11 @@ def read_config(config_path='config/default.yaml'):
 
         if 'repeat_every' in node:
             repeat_every = [int(i) for i in node['repeat_every'].split(':')]
-
+        s_pins = []
+        for p_num in node['gpio_bcm_pins']:
+            s_pins.append(Pin(p_num))
         s.append(
-            Schedule(node['gpio_bcm_pins'], start_at, run_for, repeat_every))
+            Schedule(s_pins, start_at, run_for, repeat_every))
     return s
 
 if __name__ == '__main__':
