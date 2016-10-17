@@ -11,7 +11,7 @@ from sqlalchemy import desc, func
 import analytics
 
 from database import db_session, init_db
-from models import Record, DHT11Record
+from models import HygroRecord, DHT11Record
 
 POOL_TIME = 5  # Seconds
 relays = []
@@ -34,16 +34,16 @@ def get_latest_soil_humidity():
 
     pub = []
     records = __to_pub_list(
-        Record.query.group_by(Record.pin_num)
-        .having(func.max(Record.timestamp)).all())
+        HygroRecord.query.group_by(HygroRecord.sensor_uuid)
+        .having(func.max(HygroRecord.timestamp)).all())
 
     for r in records:
         last_watering_timestamp = analytics\
-            ._get_last_watering_timestamp(r['pin_num'])
+            ._get_last_watering_timestamp(r['sensor_uuid'])
 
         if last_watering_timestamp:
             polyn = analytics._get_polynomial(
-                r['pin_num'], last_watering_timestamp)
+                r['sensor_uuid'], last_watering_timestamp)
 
             next_watering_timestamp = analytics\
                 ._predict_next_watering(polyn, last_watering_timestamp)
@@ -67,13 +67,14 @@ def get_soil_humidity_history(since_epoch_sec):
     """
 
     history = {}
-    records = Record.query.filter(Record.timestamp >= since_epoch_sec).all()
+    records = HygroRecord.query.filter(
+        HygroRecord.timestamp >= since_epoch_sec).all()
 
     for r in records:
-        if r.pin_num not in history:
-            history[r.pin_num] = []
+        if r.sensor_uuid not in history:
+            history[r.sensor_uuid] = []
 
-        history[r.pin_num].append({'x': r.timestamp, 'y': r.value})
+        history[r.sensor_uuid].append({'x': r.timestamp, 'y': r.value})
 
     return history
 
@@ -123,6 +124,15 @@ def get_records_history(since_epoch_sec):
     }}), 200
 
 
+def extract_object_from_arduino_piece(piece, ):
+    piece_dict = (piece).split(':')
+    sensor_local_id = piece_dict[0]
+    sensor_uuid = "%s_%s" % (arduino_uuid, sensor_local_id)
+    sensor_type = sensor_local_id.split('_')[0]
+    print(sensor_type)
+    print(sensor_uuid)
+
+
 @app.route('/api/records', methods=['POST'])
 def add_record():
     try:
@@ -132,25 +142,26 @@ def add_record():
                 return __bad_request()
 
             timestamp = pieces[0]
-            temperature = None
-            rel_humidity = None
+            arduino_uuid = pieces[1]  # TODO: Add to DB
 
-            for piece in pieces[1:]:
-                piece_dict = (piece).split(':')
-                key = piece_dict[0]
-                val = piece_dict[1]
+            for piece in pieces[2:]:
+                obj = extract_object_from_arduino_piece(piece, timestamp,
+                                                        arduino_uuid)
+                if obj:
+                    db_session.add(obj)
 
-                if key == 'dht11_temp':
-                    temperature = val
-                elif key == 'dht11_humidity':
-                    rel_humidity = val
-                else:
-                    db_session.add(Record(*piece_dict, timestamp=timestamp))
+                # if key == 'dht11_temp':
+                #     temperature = val
+                # elif key == 'dht11_humidity':
+                #     rel_humidity = val
+                # else:
+                #     db_session.add(
+                #         HygroRecord(*piece_dict, timestamp=timestamp))
 
-            if temperature and rel_humidity:
-                dht11_r = DHT11Record(int(temperature), int(rel_humidity),
-                                      timestamp=timestamp)
-                db_session.add(dht11_r)
+            # if temperature and rel_humidity:
+            #     dht11_r = DHT11Record(int(temperature), int(rel_humidity),
+            #                           timestamp=timestamp)
+            #     db_session.add(dht11_r)
 
         db_session.commit()
         return 'ok', 200
