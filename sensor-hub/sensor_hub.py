@@ -86,8 +86,8 @@ def get_photocell_history(since_epoch_sec):
     """
 
     history = {}
-    records = HygroRecord.query.filter(
-        HygroRecord.timestamp >= since_epoch_sec).all()
+    records = PhotocellRecord.query.filter(
+        PhotocellRecord.timestamp >= since_epoch_sec).all()
 
     for r in records:
         if r.sensor_uuid not in history:
