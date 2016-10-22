@@ -162,9 +162,6 @@ class Schedule():
 
 def update_pins_on_auto(pins, state_str):
     for pin in pins:
-        # Yes, relay 'on' needs gpio value 0
-        gpio_val = 1 if state_str == 'off' else 0
-
         if pin.on_user_override:
             print('Pin %d is on user_override. Keeping current state.'
                   % pin.bcm_pin_num)
