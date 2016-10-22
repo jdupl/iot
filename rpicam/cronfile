@@ -1,1 +1,1 @@
-*/30 * * * * /home/pi/iot/rpicam/cron_script
+*/10 8-23 * * * /home/pi/iot/rpicam/cron_script

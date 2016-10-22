@@ -2,5 +2,5 @@
 
 file=/home/pi/pictures/rpicam1/$(date  +%Y-%m-%d-%H-%M).jpg
 
-/usr/bin/raspistill -vf -hf -o "$file"
-scp "$file" user@server:/path
+/usr/bin/raspistill -o "$file"
+rsync -a /home/pi/pictures/rpicam1/ user@server:/path && rm /home/pi/pictures/rpicam1/*
