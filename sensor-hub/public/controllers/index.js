@@ -47,8 +47,8 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
           series: [
             {
               axis: "y",
-              dataset: 'temperature',
-              key: "y",
+              dataset: uuid,
+              key: "temperature",
               label: "Temperature",
               color: "#c33a0f",
               type: ['line', 'dot'],
@@ -56,8 +56,8 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
           },
             {
               axis: "y2",
-              dataset: 'rel_humidity',
-              key: "y",
+              dataset: uuid,
+              key: "rel_humidity",
               label: "Relative humidity",
               color: "#1f77b4",
               type: ['line', 'dot'],

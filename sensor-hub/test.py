@@ -223,23 +223,16 @@ class HubTest(unittest.TestCase):
         self.assertEqual(1, len(h))
         assert '1' in h
         h = h['1']
-        assert 'temperature' in h
-        assert 'rel_humidity' in h
-        self.assertEqual(3, len(h['temperature']))
-        self.assertEqual(3, len(h['rel_humidity']))
-        self.assertEqual(h['temperature'][0]['x'], 1468939853)
-        self.assertEqual(h['temperature'][0]['y'], 22)
-        self.assertEqual(h['temperature'][1]['x'], 1468853452)
-        self.assertEqual(h['temperature'][1]['y'], 22)
-        self.assertEqual(h['temperature'][2]['x'], 1468883452)
-        self.assertEqual(h['temperature'][2]['y'], 23)
-
-        self.assertEqual(h['rel_humidity'][0]['x'], 1468939853)
-        self.assertEqual(h['rel_humidity'][0]['y'], 41)
-        self.assertEqual(h['rel_humidity'][1]['x'], 1468853452)
-        self.assertEqual(h['rel_humidity'][1]['y'], 43)
-        self.assertEqual(h['rel_humidity'][2]['x'], 1468883452)
-        self.assertEqual(h['rel_humidity'][2]['y'], 45)
+        self.assertEqual(3, len(h))
+        self.assertEqual(h[0]['x'], 1468939853)
+        self.assertEqual(h[0]['temperature'], 22)
+        self.assertEqual(h[0]['rel_humidity'], 41)
+        self.assertEqual(h[1]['x'], 1468853452)
+        self.assertEqual(h[1]['temperature'], 22)
+        self.assertEqual(h[1]['rel_humidity'], 43)
+        self.assertEqual(h[2]['x'], 1468883452)
+        self.assertEqual(h[2]['temperature'], 23)
+        self.assertEqual(h[2]['rel_humidity'], 45)
 
 
 class AnalyticsTest(unittest.TestCase):
