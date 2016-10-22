@@ -25,7 +25,7 @@
                         Last update <span am-time-ago="data_history.soil_humidity[r.sensor_uuid][0].x"></span>. Check sensor.
                     </p>
                     <h2>{{r.value}}</h2>
-                    <p>
+                    <p ng-if="r.last_watering_timestamp">
                         Last watered <span am-time-ago="r.last_watering_timestamp * 1000" title="{{r.last_watering_timestamp * 1000 | amDateFormat:'dddd, MMMM Do YYYY, HH:mm:ss'}}"></span>
                     </p>
                     <p ng-if="r.next_watering_timestamp">
@@ -51,11 +51,29 @@
                 <div class="panel-body">
                     <h2>{{r.temperature}}°C</h2>
                     <h2>{{r.rel_humidity}} % relative humidity</h2>
-                    <button type="button" class="btn btn-default" ng-click="visibility['dht11'] = !visibility['dht11']">
+                    <button type="button" class="btn btn-default" ng-click="visibility[r.sensor_uuid] = !visibility[r.sensor_uuid]">
                         Toggle graph
                     </button>
                     <div ng-if="visibility[r.sensor_uuid]" class="graph-container">
-                        <linechart data="data_history.dht11" options="options['dht11']"></linechart>
+                        <linechart data="data_history.dht11" options="options[r.sensor_uuid]"></linechart>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div ng-repeat="r in records.photocell">
+        <div class="col-md-4">
+            <div class="panel panel-primary"  style="margin: 6px">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Photocell {{r.sensor_uuid}}</h3>
+                </div>
+                <div class="panel-body">
+                    <h2>Brightness {{r.value}} / 1024</h2>
+                    <button type="button" class="btn btn-default" ng-click="visibility[r.sensor_uuid] = !visibility[r.sensor_uuid]">
+                        Toggle graph
+                    </button>
+                    <div ng-if="visibility[r.sensor_uuid]" class="graph-container">
+                        <linechart data="data_history.photocell" options="options[r.sensor_uuid]"></linechart>
                     </div>
                 </div>
             </div>
