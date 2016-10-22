@@ -3,95 +3,64 @@ from sqlalchemy import Column, Integer, String
 from database import db_session, Base
 
 
-# class Record(Base):
-#     __tablename__ = 'records'
-#     query = db_session.query_property()
-#
-#     id = Column(Integer, primary_key=True)
-#     timestamp = Column(Integer)
-#     sensor_uuid = Column(String)
-#     value = Column(Integer)
-#
-#     def __init__(self, sensor_uuid, value, timestamp=None):
-#         self.timestamp = timestamp
-#         self.value = 1024 - int(value)
-#         self.sensor_uuid = sensor_uuid
-#
-#     def as_pub_dict(self):
-#         return {
-#             'timestamp': self.timestamp,
-#             'sensor_uuid': self.sensor_uuid,
-#             'value': self.value
-#         }
+class Record(object):
+    query = db_session.query_property()
+
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(Integer)
+    sensor_uuid = Column(String)
+
+    def __init__(self, sensor_uuid, timestamp, value=None):
+        self.sensor_uuid = sensor_uuid
+        self.timestamp = timestamp
+        if value:
+            self.value = int(value)
+
+    def as_pub_dict(self):
+        pub = {
+            'timestamp': self.timestamp,
+            'sensor_uuid': self.sensor_uuid,
+        }
+        if hasattr(self, 'value'):
+            pub['value'] = self.value
+        return pub
 
 
-class HygroRecord(Base):
+class HygroRecord(Base, Record):
     __tablename__ = 'records_hygro'
-    query = db_session.query_property()
 
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(Integer)
-    sensor_uuid = Column(String)
     value = Column(Integer)
 
-    def __init__(self, sensor_uuid, timestamp, raw_value):
-        self.sensor_uuid = sensor_uuid
-        self.timestamp = timestamp
-        self.value = 1024 - int(raw_value)
-
-    def as_pub_dict(self):
-        return {
-            'timestamp': self.timestamp,
-            'sensor_uuid': self.sensor_uuid,
-            'value': self.value
-        }
+    def __init__(self, *args):
+        Record.__init__(self, *args)
+        self.value = 1024 - int(self.value)
 
 
-class PhotocellRecord(Base):
+class PhotocellRecord(Base, Record):
     __tablename__ = 'records_photocell'
-    query = db_session.query_property()
 
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(Integer)
-    sensor_uuid = Column(String)
     value = Column(Integer)
 
-    def __init__(self, sensor_uuid, timestamp, value):
-        self.sensor_uuid = sensor_uuid
-        self.timestamp = timestamp
-        self.value = int(value)
-
-    def as_pub_dict(self):
-        return {
-            'timestamp': self.timestamp,
-            'sensor_uuid': self.sensor_uuid,
-            'value': self.value
-        }
+    def __init__(self, *args):
+        Record.__init__(self, *args)
 
 
-class DHT11Record(Base):
+class DHT11Record(Base, Record):
     __tablename__ = 'records_dht11'
-    query = db_session.query_property()
 
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(Integer)
-    sensor_uuid = Column(String)
     rel_humidity = Column(Integer)
     temperature = Column(Integer)
 
     def __init__(self, sensor_uuid, timestamp, temperature, rel_humidity):
-        self.sensor_uuid = sensor_uuid
-        self.timestamp = timestamp
+        Record.__init__(self, sensor_uuid, timestamp)
         self.temperature = temperature
         self.rel_humidity = rel_humidity
 
     def as_pub_dict(self):
-        return {
-            'timestamp': self.timestamp,
-            'sensor_uuid': self.sensor_uuid,
-            'rel_humidity': self.rel_humidity,
-            'temperature': self.temperature
-        }
+        pub = Record.as_pub_dict(self)
+        pub['rel_humidity'] = self.rel_humidity
+        pub['temperature'] = self.temperature
+        return pub
 
 
 def dict_to_obj(sensor_type_str, sensor_id, timestamp, args):
