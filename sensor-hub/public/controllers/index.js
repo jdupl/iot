@@ -5,26 +5,44 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
     $scope.visibility = [];
     $scope.options = {'dht11': genOptsDht11()};
 
-    function genOpts (pin) {
-        $scope.options[pin] = {
+    function genOptsHygro (uuid) {
+        $scope.options[uuid] = {
           margin: {top: 18},
           series: [
             {
               axis: "y",
-              dataset: pin,
+              dataset: uuid,
               key: "y",
               label: "Humidity",
               color: "#1f77b4",
               type: ['line', 'dot'],
-              id: 'Humidity ' + pin
+              id: 'Humidity ' + uuid
             }
           ],
           axes: {x: {key: "x", type: "date"}}
         };
     }
 
-    function genOptsDht11 () {
-        return {
+    function genOptsPhoto (uuid) {
+        $scope.options[uuid] = {
+          margin: {top: 18},
+          series: [
+            {
+              axis: "y",
+              dataset: uuid,
+              key: "y",
+              label: "Brightness",
+              color: "#1f77b4",
+              type: ['line', 'dot'],
+              id: 'Brightness ' + uuid
+            }
+          ],
+          axes: {x: {key: "x", type: "date"}}
+        };
+    }
+
+    function genOptsDht11 (uuid) {
+        $scope.options[uuid] = {
           margin: {top: 18},
           series: [
             {
@@ -34,7 +52,7 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
               label: "Temperature",
               color: "#c33a0f",
               type: ['line', 'dot'],
-              id: 'DHT11 temp'
+              id: 'DHT11 temp ' + uuid
           },
             {
               axis: "y2",
@@ -43,7 +61,7 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
               label: "Relative humidity",
               color: "#1f77b4",
               type: ['line', 'dot'],
-              id: 'DHT11 humidity'
+              id: 'DHT11 humidity ' + uuid
             }
           ],
           axes: {x: {key: "x", type: "date"}}
@@ -82,9 +100,21 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
 
               for (var i = 0; i < $scope.records.soil_humidity.length; i++) {
                 $scope.records.soil_humidity[i].header = 'panel-' + getHeaderForValue($scope.records.soil_humidity[i].value);
-                var pinNumStr = '' + $scope.records.soil_humidity[i].pin_num;
-                if (!$scope.options.hasOwnProperty(pinNumStr)) {
-                    genOpts(''+$scope.records.soil_humidity[i].pin_num);
+                var uuid = $scope.records.soil_humidity[i].sensor_uuid;
+                if (!$scope.options.hasOwnProperty(uuid)) {
+                    genOptsHygro(uuid);
+                }
+              }
+              for (var i = 0; i < $scope.records.dht11.length; i++) {
+                var uuid = $scope.records.dht11[i].sensor_uuid
+                if (!$scope.options.hasOwnProperty(uuid)) {
+                    genOptsDht11(uuid);
+                }
+              }
+              for (var i = 0; i < $scope.records.photocell.length; i++) {
+                var uuid = $scope.records.photocell[i].sensor_uuid
+                if (!$scope.options.hasOwnProperty(uuid)) {
+                    genOptsPhoto(uuid);
                 }
               }
             })
