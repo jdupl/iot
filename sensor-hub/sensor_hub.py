@@ -11,6 +11,7 @@ from sqlalchemy import desc, func
 import analytics
 
 from database import db_session, init_db
+import models
 from models import HygroRecord, DHT11Record
 
 POOL_TIME = 5  # Seconds
@@ -124,15 +125,6 @@ def get_records_history(since_epoch_sec):
     }}), 200
 
 
-def extract_object_from_arduino_piece(piece, ):
-    piece_dict = (piece).split(':')
-    sensor_local_id = piece_dict[0]
-    sensor_uuid = "%s_%s" % (arduino_uuid, sensor_local_id)
-    sensor_type = sensor_local_id.split('_')[0]
-    print(sensor_type)
-    print(sensor_uuid)
-
-
 @app.route('/api/records', methods=['POST'])
 def add_record():
     try:
@@ -150,23 +142,22 @@ def add_record():
                 if obj:
                     db_session.add(obj)
 
-                # if key == 'dht11_temp':
-                #     temperature = val
-                # elif key == 'dht11_humidity':
-                #     rel_humidity = val
-                # else:
-                #     db_session.add(
-                #         HygroRecord(*piece_dict, timestamp=timestamp))
-
-            # if temperature and rel_humidity:
-            #     dht11_r = DHT11Record(int(temperature), int(rel_humidity),
-            #                           timestamp=timestamp)
-            #     db_session.add(dht11_r)
-
         db_session.commit()
         return 'ok', 200
-    except Exception:
+    except Exception as e:
+        print(e)
         return __bad_request()
+
+
+def extract_object_from_arduino_piece(piece, timestamp, arduino_uuid):
+    piece_dict = (piece).split(':')
+    sensor_local_id = piece_dict[0]
+    sensor_uuid = "%s_%s" % (arduino_uuid, sensor_local_id)
+
+    sensor_type = sensor_local_id.split('_')[0]
+    args = piece_dict[1].split(';')
+
+    return models.dict_to_obj(sensor_type, sensor_uuid, timestamp, args)
 
 
 def _get_new_relays(relays_ip):

@@ -3,17 +3,17 @@ import datetime as dt
 from sqlalchemy import desc, between
 from numpy.polynomial import polynomial
 
-from models import Record
+from models import HygroRecord
 
 
-def _get_last_watering_timestamp(pin_num):
+def _get_last_watering_timestamp(sensor_uuid):
     """Try to find last watering from the last 500 records of the sensor.
        A diffenrece of `watering_thresold` must be found between now and then
        to be considered a watering."""
     watering_thresold = 100  # Minimum fluctuation to consider a watering
 
-    records = Record.query.filter(Record.pin_num == pin_num) \
-        .order_by(desc(Record.timestamp)).limit(500).all()
+    records = HygroRecord.query.filter(HygroRecord.sensor_uuid == sensor_uuid) \
+        .order_by(desc(HygroRecord.timestamp)).limit(500).all()
     last_record = records[0]
 
     for current in records[1:]:
@@ -26,15 +26,15 @@ def _get_last_watering_timestamp(pin_num):
         last_record = current
 
 
-def _get_polynomial(pin_num, start, stop=dt.datetime.now()):
+def _get_polynomial(sensor_uuid, start, stop=dt.datetime.now()):
     """Get a polynomial aproximation of the soil humidity function from data."""
     x = []
     y = []
 
-    records = Record.query \
-        .filter(Record.pin_num == pin_num) \
-        .filter(between(Record.timestamp, start, stop)) \
-        .order_by(Record.timestamp).all()
+    records = HygroRecord.query \
+        .filter(HygroRecord.sensor_uuid == sensor_uuid) \
+        .filter(between(HygroRecord.timestamp, start, stop)) \
+        .order_by(HygroRecord.timestamp).all()
 
     for r in records:
         x.append((r.timestamp - start))

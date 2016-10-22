@@ -9,7 +9,7 @@ from sqlalchemy import desc
 import sensor_hub
 import analytics
 
-from models import Record
+from models import HygroRecord, PhotocellRecord, DHT11Record
 from sensor_hub import app, db_session
 
 
@@ -25,114 +25,130 @@ class HubTest(unittest.TestCase):
         os.remove('/tmp/test.db')
 
     def test_create_record(self):
-        record = Record(7, 256, 1464191598)
+        record = HygroRecord('a_uuid_hygro_7', 1464191598, 256)
         db_session.add(record)
         db_session.commit()
-        records = Record.query.all()
+        records = HygroRecord.query.all()
         assert len(records) == 1
         self.assertEqual(records[0].timestamp, 1464191598)
-        self.assertEqual(records[0].pin_num, 7)
+        self.assertEqual(records[0].sensor_uuid, 'a_uuid_hygro_7')
         self.assertEqual(records[0].value, 768)
 
     def test_single_message_single_sensor(self):
-        res = self.app.post('/api/records', data='1464191598,7:1024')
+        res = self.app.post('/api/records',
+                            data='1464191598,a_uuid,hygro_5:1024')
         assert res.status_code == 200
-        records = Record.query.all()
+
+        records = HygroRecord.query.all()
         assert len(records) == 1
+
+        self.assertEqual(type(records[0]).__name__, 'HygroRecord')
         self.assertEqual(records[0].timestamp, 1464191598)
-        self.assertEqual(records[0].pin_num, 7)
+        self.assertEqual(records[0].sensor_uuid, 'a_uuid_hygro_5')
         self.assertEqual(records[0].value, 0)
 
     def test_single_message_multiple_sensors(self):
-        res = self.app.post('/api/records', data='1464191598,7:1024,8:768')
+        res = self.app.post(
+            '/api/records', data='1464191598,a_uuid,hygro_7:1024,hygro_8:768')
+
         assert res.status_code == 200
-        records = Record.query.all()
+        records = HygroRecord.query.all()
         assert len(records) == 2
         self.assertEqual(records[0].timestamp, 1464191598)
-        self.assertEqual(records[0].pin_num, 7)
+        self.assertEqual(records[0].sensor_uuid, 'a_uuid_hygro_7')
         self.assertEqual(records[0].value, 0)
         self.assertEqual(records[1].timestamp, 1464191598)
-        self.assertEqual(records[1].pin_num, 8)
+        self.assertEqual(records[1].sensor_uuid, 'a_uuid_hygro_8')
         self.assertEqual(records[1].value, 256)
 
     def test_single_message_with_multiple_kinds_of_sensors(self):
         res = self.app.post(
-            '/api/records', data='1475429113,a_uuid,dht11_5:21;42,hygro_0:856,'
-            'hygro_1:1023,hygro_2:525,hygro_3:538,photocell_7:42')
+            '/api/records', data='1475429113,a_uuid,dht11_5:21;42,hygro_0:1024,'
+            'photocell_7:42')
         assert res.status_code == 200
-        records = Record.query.all()
-        assert len(records) == 2
-        self.assertEqual(records[0].timestamp, 1464191598)
-        self.assertEqual(records[0].pin_num, 7)
-        self.assertEqual(records[0].value, 1024)
-        self.assertEqual(records[1].timestamp, 1464191598)
-        self.assertEqual(records[1].pin_num, 8)
-        self.assertEqual(records[1].value, 768)
+
+        records = DHT11Record.query.all()
+        records.append(*HygroRecord.query.all())
+        records.append(*PhotocellRecord.query.all())
+
+        assert len(records) == 3
+        self.assertEqual(records[0].sensor_uuid, 'a_uuid_dht11_5')
+        self.assertEqual(records[0].timestamp, 1475429113)
+        self.assertEqual(records[0].temperature, 21)
+        self.assertEqual(records[0].rel_humidity, 42)
+
+        self.assertEqual(records[1].sensor_uuid, 'a_uuid_hygro_0')
+        self.assertEqual(records[1].timestamp, 1475429113)
+        self.assertEqual(records[1].value, 0)
+
+        self.assertEqual(records[2].sensor_uuid, 'a_uuid_photocell_7')
+        self.assertEqual(records[2].timestamp, 1475429113)
+        self.assertEqual(records[2].value, 42)
 
     def test_multiple_messages(self):
-        data = ('1464181598,7:1024\n'
-                '1464191598,6:768,9:512')
+        data = ('1464181598,a_uuid,hygro_7:1024\n'
+                '1464191598,a_uuid,hygro_6:768')
         res = self.app.post('/api/records', data=data)
         assert res.status_code == 200
-        records = Record.query.all()
-        assert len(records) == 3
+        records = HygroRecord.query.all()
+        assert len(records) == 2
 
     def test_not_good(self):
         data = ('1024')
         res = self.app.post('/api/records', data=data)
         assert res.status_code == 400
-        records = Record.query.all()
+        records = HygroRecord.query.all()
         assert len(records) == 0
 
     def test_get_latest(self):
-        db_session.add(Record(1, 1024, 1464191598))
-        db_session.add(Record(2, 1023, 1464191598))
-        db_session.add(Record(3, 1022, 1464191598))
+        db_session.add(HygroRecord('hygro_1', 1464191598, 1024))
+        db_session.add(HygroRecord('hygro_2', 1464191598, 1023))
+        db_session.add(HygroRecord('hygro_3', 1464191598, 1022))
 
-        db_session.add(Record(1, 1021, 1564191598))
-        db_session.add(Record(2, 1020, 1564191598))
+        db_session.add(HygroRecord('hygro_1', 1564191598, 1021))
+        db_session.add(HygroRecord('hygro_2', 1564191598, 1020))
 
-        db_session.add(Record(1, 1, 1364191598))
-        db_session.add(Record(2, 2, 1364191598))
-        db_session.add(Record(3, 3, 1364191598))
+        db_session.add(HygroRecord('hygro_1', 1364191598, 1))
+        db_session.add(HygroRecord('hygro_2', 1364191598, 2))
+        db_session.add(HygroRecord('hygro_3', 1364191598, 3))
 
         db_session.commit()
 
         res = self.app.get('/api/records/latest')
         assert res.status_code == 200
         records = json.loads(res.data.decode('utf8'))
-        print(records)
+
         assert 'latest' in records
         assert 'soil_humidity' in records['latest']
         records = records['latest']['soil_humidity']
         self.assertEqual(3, len(records))
 
-        self.assertEqual(records[0]['pin_num'], 1)
+        self.assertEqual(records[0]['sensor_uuid'], 'hygro_1')
         self.assertEqual(records[0]['timestamp'], 1564191598)
         self.assertEqual(records[0]['value'], 3)
 
-        self.assertEqual(records[1]['pin_num'], 2)
+        self.assertEqual(records[1]['sensor_uuid'], 'hygro_2')
         self.assertEqual(records[1]['timestamp'], 1564191598)
         self.assertEqual(records[1]['value'], 4)
 
-        self.assertEqual(records[2]['pin_num'], 3)
+        self.assertEqual(records[2]['sensor_uuid'], 'hygro_3')
         self.assertEqual(records[2]['timestamp'], 1464191598)
         self.assertEqual(records[2]['value'], 2)
 
     def test_get_history(self):
-        db_session.add(Record(1, 100, 1468588400))
+        db_session.add(HygroRecord(1, 1468588400, 100))
 
-        db_session.add(Record(1, 1024, 1468939853))
-        db_session.add(Record(2, 1023, 1468939853))
-        db_session.add(Record(3, 1022, 1468939853))
+        db_session.add(HygroRecord(1, 1468939853, 1024))
+        db_session.add(HygroRecord(2, 1468939853, 1023))
+        db_session.add(HygroRecord(3, 1468939853, 1022))
 
-        db_session.add(Record(1, 1021, 1468853452))
-        db_session.add(Record(2, 1020, 1468853452))
-        db_session.add(Record(3, 1020, 1468853452))
+        db_session.add(HygroRecord(1, 1468853452, 1021))
+        db_session.add(HygroRecord(2, 1468853452, 1020))
+        db_session.add(HygroRecord(3, 1468853452, 1020))
 
-        db_session.add(Record(1, 1, 1468883452))
-        db_session.add(Record(2, 2, 1468883452))
-        db_session.add(Record(3, 3, 1468883452))
+        db_session.add(HygroRecord(1, 1468883452, 1))
+        db_session.add(HygroRecord(2, 1468883452, 2))
+        db_session.add(HygroRecord(3, 1468883452, 3))
 
         db_session.commit()
 
@@ -186,7 +202,7 @@ class AnalyticsTest(unittest.TestCase):
             reader = csv.reader(csvfile)
 
             for i, row in enumerate(reader):
-                record = Record(row[1], int(row[2]), row[0])
+                record = HygroRecord(row[1], row[0], int(row[2]))
                 self.all_records.append(record)
 
                 if not offset or i >= offset:
@@ -206,8 +222,8 @@ class AnalyticsTest(unittest.TestCase):
         with self.now:
             self.gen_data(offset=10)
 
-            records = Record.query.filter(Record.pin_num == 1) \
-                .order_by(desc(Record.timestamp)).all()
+            records = HygroRecord.query.filter(HygroRecord.sensor_uuid == 1) \
+                .order_by(desc(HygroRecord.timestamp)).all()
             self.assertEqual(21, len(records))
             poly = analytics._get_polynomial(1, 1468810074)
 
