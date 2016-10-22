@@ -3,7 +3,7 @@ var controllers = angular.module('app.controllers.IndexController', ['ui.bootstr
 controllers.controller('IndexController', function($scope, $http, $interval) {
     $scope.alerts = [];
     $scope.visibility = [];
-    $scope.options = {'dht11': genOptsDht11()};
+    $scope.options = {};
 
     function genOptsHygro (uuid) {
         $scope.options[uuid] = {
