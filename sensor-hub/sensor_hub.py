@@ -12,7 +12,7 @@ import analytics
 
 from database import db_session, init_db
 import models
-from models import HygroRecord, DHT11Record
+from models import HygroRecord, DHT11Record, PhotocellRecord
 
 POOL_TIME = 5  # Seconds
 relays = []
