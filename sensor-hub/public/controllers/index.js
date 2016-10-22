@@ -69,8 +69,11 @@ controllers.controller('IndexController', function($scope, $http, $interval) {
     }
 
     $scope.isExpired = function(dataset, maxSec) {
-      var last = dataset[dataset.length -1];
-      return Date.now()- last.x > maxSec * 1000
+        if (!dataset) {
+            return false;
+        }
+        var last = dataset[dataset.length -1];
+        return Date.now()- last.x > maxSec * 1000
     }
     $scope.expiredSince = function (dataset) {
         return dataset[dataset.length -1].x;
