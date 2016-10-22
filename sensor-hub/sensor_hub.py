@@ -205,8 +205,8 @@ def setup(env=None):
 
     init_db(app.config['DATABASE_URI'])
 
-    do_update_relays()
-    atexit.register(interrupt)
+    # do_update_relays()
+    # atexit.register(interrupt)
 
     return app
 
