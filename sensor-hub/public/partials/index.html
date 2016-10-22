@@ -21,8 +21,8 @@
                     <h3 class="panel-title">Hygrometer {{r.sensor_uuid}}</h3>
                 </div>
                 <div class="panel-body">
-                    <p ng-if="isExpired(data_history.soil_humidity[r.sensor_uuid][0].x, 3800)" class="text-danger">
-                        Last update <span am-time-ago="data_history.soil_humidity[r.sensor_uuid][0].x"></span>. Check sensor.
+                    <p ng-if="isExpired(data_history.soil_humidity[r.sensor_uuid], 3800)" class="text-danger">
+                        Last update <span am-time-ago="expiredSince(data_history.soil_humidity[r.sensor_uuid])"></span>. Check sensor.
                     </p>
                     <h2>{{r.value}}</h2>
                     <p ng-if="r.last_watering_timestamp">
