@@ -63,7 +63,25 @@ def get_lastest_dht11():
 
 
 def get_soil_humidity_history(since_epoch_sec):
-    """Gets history of multiple soil humidity sensor.
+    """Gets history of multiple soil humidity sensors.
+    Returns array of histories.
+    """
+
+    history = {}
+    records = HygroRecord.query.filter(
+        HygroRecord.timestamp >= since_epoch_sec).all()
+
+    for r in records:
+        if r.sensor_uuid not in history:
+            history[r.sensor_uuid] = []
+
+        history[r.sensor_uuid].append({'x': r.timestamp, 'y': r.value})
+
+    return history
+
+
+def get_photocell_history(since_epoch_sec):
+    """Gets history of multiple photocell sensors.
     Returns array of histories.
     """
 
@@ -81,19 +99,19 @@ def get_soil_humidity_history(since_epoch_sec):
 
 
 def get_dht11_history(since_epoch_sec):
-    """Gets history from a single DHT11 sensor."""
+    """Gets history from DHT11 sensors."""
 
-    history = {
-        'temperature': [],
-        'rel_humidity': []
-    }
+    history = {}
     records = DHT11Record.query\
         .filter(DHT11Record.timestamp >= since_epoch_sec).all()
 
     for r in records:
-        history['temperature'].append({'x': r.timestamp, 'y': r.temperature})
-        history['rel_humidity'].append({'x': r.timestamp, 'y': r.rel_humidity})
-
+        if r.sensor_uuid not in history:
+            history[r.sensor_uuid] = []
+        history[r.sensor_uuid].append({
+            'temperature': {'x': r.timestamp, 'y': r.temperature},
+            'rel_humidity': {'x': r.timestamp, 'y': r.rel_humidity}
+        })
     return history
 
 
@@ -121,7 +139,8 @@ def get_records_history(since_epoch_sec):
 
     return jsonify({'history': {
         'soil_humidity': get_soil_humidity_history(since_epoch_sec),
-        'dht11': get_dht11_history(since_epoch_sec)
+        'dht11': get_dht11_history(since_epoch_sec),
+        'photocell': get_photocell_history(since_epoch_sec),
     }}), 200
 
 
@@ -144,8 +163,7 @@ def add_record():
 
         db_session.commit()
         return 'ok', 200
-    except Exception as e:
-        print(e)
+    except Exception:
         return __bad_request()
 
 
@@ -169,36 +187,36 @@ def _get_new_relays(relays_ip):
         print(r.status_code)
 
 
-def interrupt():
-    global relays_updater
-    relays_updater.cancel()
+# def interrupt():
+#     global relays_updater
+#     relays_updater.cancel()
 
 
 def setup(env=None):
-    def interrupt():
-        global relays_updater
-        relays_updater.cancel()
-
-    def update_relays():
-        global relays
-        global relays_updater
-
-        try:
-            new_relays = []
-            if env != 'test':
-                new_relays = _get_new_relays('localhost:8080')
-                relays = new_relays
-        except Exception as e:
-            print(e)
-
-        # Setup next execution
-        relays_updater = threading.Timer(POOL_TIME, update_relays, ())
-        relays_updater.start()
-
-    def do_update_relays():
-        global relays_updater
-        relays_updater = threading.Timer(POOL_TIME, update_relays, ())
-        relays_updater.start()
+    # def interrupt():
+    #     global relays_updater
+    #     relays_updater.cancel()
+    #
+    # def update_relays():
+    #     global relays
+    #     global relays_updater
+    #
+    #     try:
+    #         new_relays = []
+    #         if env != 'test':
+    #             new_relays = _get_new_relays('localhost:8080')
+    #             relays = new_relays
+    #     except Exception as e:
+    #         print(e)
+    #
+    #     # Setup next execution
+    #     relays_updater = threading.Timer(POOL_TIME, update_relays, ())
+    #     relays_updater.start()
+    #
+    # def do_update_relays():
+    #     global relays_updater
+    #     relays_updater = threading.Timer(POOL_TIME, update_relays, ())
+    #     relays_updater.start()
 
     app.config.from_pyfile('config/default.py')
     app.config.from_pyfile('config/%s.py' % env, silent=True)

@@ -20,7 +20,7 @@ class HubTest(unittest.TestCase):
         self.app = app.test_client()
 
     def tearDown(self):
-        sensor_hub.interrupt()
+        # sensor_hub.interrupt()
         db_session.close()
         os.remove('/tmp/test.db')
 
@@ -150,6 +150,10 @@ class HubTest(unittest.TestCase):
         db_session.add(HygroRecord(2, 1468883452, 2))
         db_session.add(HygroRecord(3, 1468883452, 3))
 
+        db_session.add(DHT11Record(1, 1468939853, 22, 41))
+        db_session.add(DHT11Record(1, 1468853452, 22, 43))
+        db_session.add(DHT11Record(1, 1468883452, 23, 45))
+
         db_session.commit()
 
         res = self.app.get('/api/records/1468688400')
@@ -183,6 +187,22 @@ class HubTest(unittest.TestCase):
         self.assertEqual(history['soil_humidity']['3'][2]['x'], 1468883452)
         self.assertEqual(history['soil_humidity']['3'][2]['y'], 1021)
 
+        self.assertEqual(1, len(history['dht11']))
+        h = history['dht11']['1']
+        self.assertEqual(h[0]['temperature']['x'], 1468939853)
+        self.assertEqual(h[0]['temperature']['y'], 22)
+        self.assertEqual(h[1]['temperature']['x'], 1468853452)
+        self.assertEqual(h[1]['temperature']['y'], 22)
+        self.assertEqual(h[2]['temperature']['x'], 1468883452)
+        self.assertEqual(h[2]['temperature']['y'], 23)
+
+        self.assertEqual(h[0]['rel_humidity']['x'], 1468939853)
+        self.assertEqual(h[0]['rel_humidity']['y'], 41)
+        self.assertEqual(h[1]['rel_humidity']['x'], 1468853452)
+        self.assertEqual(h[1]['rel_humidity']['y'], 43)
+        self.assertEqual(h[2]['rel_humidity']['x'], 1468883452)
+        self.assertEqual(h[2]['rel_humidity']['y'], 45)
+
 
 class AnalyticsTest(unittest.TestCase):
 
@@ -192,7 +212,7 @@ class AnalyticsTest(unittest.TestCase):
         self.app = app.test_client()
 
     def tearDown(self):
-        sensor_hub.interrupt()
+        # sensor_hub.interrupt()
         db_session.close()
         os.remove('/tmp/test.db')
 
