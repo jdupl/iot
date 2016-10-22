@@ -112,6 +112,12 @@ class HubTest(unittest.TestCase):
         db_session.add(HygroRecord('hygro_2', 1364191598, 2))
         db_session.add(HygroRecord('hygro_3', 1364191598, 3))
 
+        db_session.add(DHT11Record('dht11_1', 1468939853, 22, 41))
+        db_session.add(DHT11Record('dht11_2', 1468939853, 21, 46))
+
+        db_session.add(PhotocellRecord('photocell_1', 1468939853, 220))
+        db_session.add(PhotocellRecord('photocell_2', 1468939853, 210))
+
         db_session.commit()
 
         res = self.app.get('/api/records/latest')
@@ -120,20 +126,46 @@ class HubTest(unittest.TestCase):
 
         assert 'latest' in records
         assert 'soil_humidity' in records['latest']
-        records = records['latest']['soil_humidity']
-        self.assertEqual(3, len(records))
+        r = records['latest']['soil_humidity']
+        self.assertEqual(3, len(r))
 
-        self.assertEqual(records[0]['sensor_uuid'], 'hygro_1')
-        self.assertEqual(records[0]['timestamp'], 1564191598)
-        self.assertEqual(records[0]['value'], 3)
+        self.assertEqual(r[0]['sensor_uuid'], 'hygro_1')
+        self.assertEqual(r[0]['timestamp'], 1564191598)
+        self.assertEqual(r[0]['value'], 3)
 
-        self.assertEqual(records[1]['sensor_uuid'], 'hygro_2')
-        self.assertEqual(records[1]['timestamp'], 1564191598)
-        self.assertEqual(records[1]['value'], 4)
+        self.assertEqual(r[1]['sensor_uuid'], 'hygro_2')
+        self.assertEqual(r[1]['timestamp'], 1564191598)
+        self.assertEqual(r[1]['value'], 4)
 
-        self.assertEqual(records[2]['sensor_uuid'], 'hygro_3')
-        self.assertEqual(records[2]['timestamp'], 1464191598)
-        self.assertEqual(records[2]['value'], 2)
+        self.assertEqual(r[2]['sensor_uuid'], 'hygro_3')
+        self.assertEqual(r[2]['timestamp'], 1464191598)
+        self.assertEqual(r[2]['value'], 2)
+
+        assert 'dht11' in records['latest']
+        r = records['latest']['dht11']
+        self.assertEqual(2, len(r))
+
+        self.assertEqual(r[0]['sensor_uuid'], 'dht11_1')
+        self.assertEqual(r[0]['timestamp'], 1468939853)
+        self.assertEqual(r[0]['temperature'], 22)
+        self.assertEqual(r[0]['rel_humidity'], 41)
+
+        self.assertEqual(r[1]['sensor_uuid'], 'dht11_2')
+        self.assertEqual(r[1]['timestamp'], 1468939853)
+        self.assertEqual(r[1]['temperature'], 21)
+        self.assertEqual(r[1]['rel_humidity'], 46)
+
+        assert 'photocell' in records['latest']
+        r = records['latest']['photocell']
+        self.assertEqual(2, len(r))
+
+        self.assertEqual(r[0]['sensor_uuid'], 'photocell_1')
+        self.assertEqual(r[0]['timestamp'], 1468939853)
+        self.assertEqual(r[0]['value'], 220)
+
+        self.assertEqual(r[1]['sensor_uuid'], 'photocell_2')
+        self.assertEqual(r[1]['timestamp'], 1468939853)
+        self.assertEqual(r[1]['value'], 210)
 
     def test_get_history(self):
         db_session.add(HygroRecord(1, 1468588400, 100))

@@ -5,7 +5,7 @@ import threading
 import requests
 
 from flask import Flask, request, jsonify
-from sqlalchemy import desc, func
+from sqlalchemy import func
 
 # Own modules
 import analytics
@@ -57,9 +57,15 @@ def get_latest_soil_humidity():
 
 
 def get_lastest_dht11():
-    obj = DHT11Record.query.order_by(desc(DHT11Record.timestamp)).first()
-    if obj:
-        return obj.as_pub_dict()
+    return __to_pub_list(
+        DHT11Record.query.group_by(DHT11Record.sensor_uuid)
+        .having(func.max(DHT11Record.timestamp)).all())
+
+
+def get_lastest_photocell():
+    return __to_pub_list(
+        PhotocellRecord.query.group_by(PhotocellRecord.sensor_uuid)
+        .having(func.max(PhotocellRecord.timestamp)).all())
 
 
 def get_soil_humidity_history(since_epoch_sec):
@@ -131,6 +137,7 @@ def get_lastest_records():
     return jsonify({'latest': {
         'soil_humidity': get_latest_soil_humidity(),
         'dht11': get_lastest_dht11(),
+        'photocell': get_lastest_photocell(),
     }}), 200
 
 
