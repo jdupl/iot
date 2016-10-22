@@ -219,21 +219,27 @@ class HubTest(unittest.TestCase):
         self.assertEqual(history['soil_humidity']['3'][2]['x'], 1468883452)
         self.assertEqual(history['soil_humidity']['3'][2]['y'], 1021)
 
-        self.assertEqual(1, len(history['dht11']))
-        h = history['dht11']['1']
-        self.assertEqual(h[0]['temperature']['x'], 1468939853)
-        self.assertEqual(h[0]['temperature']['y'], 22)
-        self.assertEqual(h[1]['temperature']['x'], 1468853452)
-        self.assertEqual(h[1]['temperature']['y'], 22)
-        self.assertEqual(h[2]['temperature']['x'], 1468883452)
-        self.assertEqual(h[2]['temperature']['y'], 23)
+        h = history['dht11']
+        self.assertEqual(1, len(h))
+        assert '1' in h
+        h = h['1']
+        assert 'temperature' in h
+        assert 'rel_humidity' in h
+        self.assertEqual(3, len(h['temperature']))
+        self.assertEqual(3, len(h['rel_humidity']))
+        self.assertEqual(h['temperature'][0]['x'], 1468939853)
+        self.assertEqual(h['temperature'][0]['y'], 22)
+        self.assertEqual(h['temperature'][1]['x'], 1468853452)
+        self.assertEqual(h['temperature'][1]['y'], 22)
+        self.assertEqual(h['temperature'][2]['x'], 1468883452)
+        self.assertEqual(h['temperature'][2]['y'], 23)
 
-        self.assertEqual(h[0]['rel_humidity']['x'], 1468939853)
-        self.assertEqual(h[0]['rel_humidity']['y'], 41)
-        self.assertEqual(h[1]['rel_humidity']['x'], 1468853452)
-        self.assertEqual(h[1]['rel_humidity']['y'], 43)
-        self.assertEqual(h[2]['rel_humidity']['x'], 1468883452)
-        self.assertEqual(h[2]['rel_humidity']['y'], 45)
+        self.assertEqual(h['rel_humidity'][0]['x'], 1468939853)
+        self.assertEqual(h['rel_humidity'][0]['y'], 41)
+        self.assertEqual(h['rel_humidity'][1]['x'], 1468853452)
+        self.assertEqual(h['rel_humidity'][1]['y'], 43)
+        self.assertEqual(h['rel_humidity'][2]['x'], 1468883452)
+        self.assertEqual(h['rel_humidity'][2]['y'], 45)
 
 
 class AnalyticsTest(unittest.TestCase):

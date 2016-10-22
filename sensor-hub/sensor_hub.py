@@ -113,10 +113,17 @@ def get_dht11_history(since_epoch_sec):
 
     for r in records:
         if r.sensor_uuid not in history:
-            history[r.sensor_uuid] = []
-        history[r.sensor_uuid].append({
-            'temperature': {'x': r.timestamp, 'y': r.temperature},
-            'rel_humidity': {'x': r.timestamp, 'y': r.rel_humidity}
+            history[r.sensor_uuid] = {
+                'temperature': [],
+                'rel_humidity': []
+            }
+        history[r.sensor_uuid]['temperature'].append({
+            'x': r.timestamp,
+            'y': r.temperature
+        })
+        history[r.sensor_uuid]['rel_humidity'].append({
+            'x': r.timestamp,
+            'y': r.rel_humidity
         })
     return history
 
