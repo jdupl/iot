@@ -1,0 +1,6 @@
+-
+  name: test lights
+  gpio_bcm_pins: [24]
+  start_at: '0:0:0'
+  run_for: '23:59:59'
+  uuid: 1

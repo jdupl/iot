@@ -1,9 +1,11 @@
-import datetime as dt
 import unittest
+import json
+import datetime as dt
+
 from unittest.mock import MagicMock
 
-from relays import Schedule, Pin
 import relays
+from relays import Schedule, Pin, app
 
 
 class mock_datetime(object):
@@ -175,9 +177,6 @@ class ScheduleTest(unittest.TestCase):
 
 class PinTest(unittest.TestCase):
 
-    def before(self):
-        pass
-
     def test_pins_on_auto_have_their_state_updated(self):
         gpio = MagicMock()
         gpio.output = MagicMock()
@@ -204,6 +203,27 @@ class PinTest(unittest.TestCase):
         assert gpio.output.call_count == 1
         assert pin1.state_str == 'off'
         assert pin2.state_str == 'on'
+
+
+class RelayApiTest(unittest.TestCase):
+
+    def setUp(self):
+        relays.setup('test', 'config/test.yaml')
+        self.app = app.test_client()
+
+    def tearDown(self):
+        relays.interrupt()
+
+    def test_relay_api_send_relays(self):
+        res = self.app.get('/api/relays')
+        assert res.status_code == 200
+
+        relays = json.loads(res.data.decode('utf8'))
+        assert 'relays' in relays
+        relays = relays['relays']
+
+        assert len(relays) == 1
+        assert relays[0]['state_str'] == 'on'
 
 if __name__ == '__main__':
     unittest.main()
