@@ -5,7 +5,8 @@ import datetime as dt
 from unittest.mock import MagicMock
 
 import relays
-from relays import Schedule, Pin, app
+import scheduler
+from relays import Schedule, Pin
 
 
 class mock_datetime(object):
@@ -40,16 +41,16 @@ class mock_datetime(object):
 class ConfigTest(unittest.TestCase):
 
     def test_get_schedule_from_config(self):
-        actuals = relays.read_config('fixtures/test_config_simple.yaml')
+        actuals = relays.read_config('fixtures/test_config_simple.yaml')[0]
 
-        expected = Schedule([Pin(14)], (5, 0, 0), (1, 0, 0))
+        expected = Schedule([14], (5, 0, 0), (1, 0, 0))
         actual = actuals[0]
 
         self.assertEqual(expected.pins, actual.pins)
         self.assertEqual(expected.open_events, actual.open_events)
         self.assertEqual(expected.close_events, actual.close_events)
 
-        expected = Schedule([Pin(23), Pin(12)], (8, 0, 0), (12, 0, 0))
+        expected = Schedule([23, 12], (8, 0, 0), (12, 0, 0))
         actual = actuals[1]
 
         self.assertEqual(expected.pins, actual.pins)
@@ -57,16 +58,16 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(expected.close_events, actual.close_events)
 
     def test_get_schedule_from_config_repeating(self):
-        actuals = relays.read_config('fixtures/test_config_repeating.yaml')
+        actuals = relays.read_config('fixtures/test_config_repeating.yaml')[0]
 
-        expected = Schedule([Pin(14), Pin(76)],
+        expected = Schedule([14, 76],
                             (5, 0, 0), (0, 5, 0), (1, 0, 0))
         actual = actuals[0]
         self.assertEqual(expected.pins, actual.pins)
         self.assertEqual(expected.open_events, actual.open_events)
         self.assertEqual(expected.close_events, actual.close_events)
 
-        expected = Schedule([Pin(23), Pin(12)],
+        expected = Schedule([23, 12],
                             (8, 0, 0), (0, 0, 30), (0, 30, 0))
         actual = actuals[1]
 
@@ -79,42 +80,42 @@ class ScheduleTest(unittest.TestCase):
 
     def test_get_times_of_events_from_simple_schedule(self):
         # No repeat
-        s = Schedule(Pin(14), (5, 0, 0), (1, 0, 0))
+        s = Schedule(14, (5, 0, 0), (1, 0, 0))
         self.assertEqual(s.open_events, [dt.time(5, 0, 0)])
         self.assertEqual(s.close_events, [dt.time(6, 0, 0)])
 
-        s = Schedule(Pin(14), (5, 0, 0), (0, 30, 0))
+        s = Schedule(14, (5, 0, 0), (0, 30, 0))
         self.assertEqual(s.open_events, [dt.time(5, 0, 0)])
         self.assertEqual(s.close_events, [dt.time(5, 30, 0)])
 
-        s = Schedule(Pin(14), (5, 0, 0), (0, 0, 1))
+        s = Schedule(14, (5, 0, 0), (0, 0, 1))
         self.assertEqual(s.open_events, [dt.time(5, 0, 0)])
         self.assertEqual(s.close_events, [dt.time(5, 0, 1)])
 
         # Tests second overflow
-        s = Schedule(Pin(14), (5, 3, 55), (3, 34, 10))
+        s = Schedule(14, (5, 3, 55), (3, 34, 10))
         self.assertEqual(s.open_events, [dt.time(5, 3, 55)])
         self.assertEqual(s.close_events, [dt.time(8, 38, 5)])
 
     def test_get_times_of_events_from_repeating_schedule(self):
-        s = Schedule(Pin(14), (5, 0, 0), (1, 0, 0), (8, 0, 0))
+        s = Schedule(14, (5, 0, 0), (1, 0, 0), (8, 0, 0))
         self.assertEqual(s.open_events, [dt.time(5, 0, 0), dt.time(13, 0, 0),
                                          dt.time(21, 0, 0)])
         self.assertEqual(s.close_events, [dt.time(6, 0, 0), dt.time(14, 0, 0),
                                           dt.time(22, 0, 0)])
 
-        s = Schedule(Pin(14), (5, 0, 0), (1, 0, 1), (8, 13, 4))
+        s = Schedule(14, (5, 0, 0), (1, 0, 1), (8, 13, 4))
         self.assertEqual(s.open_events, [dt.time(5, 0, 0), dt.time(13, 13, 4),
                                          dt.time(21, 26, 8)])
         self.assertEqual(s.close_events, [dt.time(6, 0, 1), dt.time(14, 13, 5),
                                           dt.time(22, 26, 9)])
 
     def test_get_times_of_events_from_repeating_schedule_with_limits(self):
-        s = Schedule(Pin(14), (5, 0, 0), (1, 0, 0), (8, 0, 0), (21, 0, 0))
+        s = Schedule(14, (5, 0, 0), (1, 0, 0), (8, 0, 0), (21, 0, 0))
         self.assertEqual(s.open_events, [dt.time(5, 0, 0), dt.time(13, 0, 0)])
         self.assertEqual(s.close_events, [dt.time(6, 0, 0), dt.time(14, 0, 0)])
 
-        s = Schedule(Pin(14), (5, 0, 0), (1, 0, 1), (8, 13, 4), (21, 26, 9))
+        s = Schedule(14, (5, 0, 0), (1, 0, 1), (8, 13, 4), (21, 26, 9))
         self.assertEqual(s.open_events, [dt.time(5, 0, 0), dt.time(13, 13, 4),
                                          dt.time(21, 26, 8)])
         self.assertEqual(s.close_events, [dt.time(6, 0, 1), dt.time(14, 13, 5),
@@ -184,7 +185,9 @@ class PinTest(unittest.TestCase):
 
         pin1 = Pin(14)
         pin2 = Pin(15)
-        relays.update_pins_on_auto([pin1, pin2], 'on')
+        synced_pins = {14: pin1, 15: pin2}
+
+        scheduler.update_pins_on_auto([14, 15], 'on', synced_pins)
 
         assert gpio.output.call_count == 2
         assert pin1.state_str == 'on'
@@ -194,12 +197,12 @@ class PinTest(unittest.TestCase):
         gpio = MagicMock()
         gpio.output = MagicMock()
         relays.GPIO = gpio
-
         pin1 = Pin(14)
         pin1.on_user_override = True
         pin2 = Pin(15)
+        synced_pins = {14: pin1, 15: pin2}
 
-        relays.update_pins_on_auto([pin1, pin2], 'on')
+        scheduler.update_pins_on_auto([14, 15], 'on', synced_pins)
         assert gpio.output.call_count == 1
         assert pin1.state_str == 'off'
         assert pin2.state_str == 'on'
@@ -210,7 +213,7 @@ class RelayApiTest(unittest.TestCase):
     def setUp(self):
         with mock_datetime(2016, 5, 30, 6, 1):
             relays.main('test', 'config/test.yaml')
-            self.app = app.test_client()
+            self.app = relays.flask_app.test_client()
 
     def tearDown(self):
         relays.interrupt()
@@ -223,23 +226,35 @@ class RelayApiTest(unittest.TestCase):
         assert 'relays' in relays
         relays = relays['relays']
         assert len(relays) == 1
-        print(relays[0]['state_str'])
         assert relays[0]['state_str'] == 'on'
 
-    def test_relay_api_put_relay(self):
-        res = self.app.get('/api/relays/')
-        relays = json.loads(res.data.decode('utf8'))
+    def test_relay_api_put_relay_override(self):
+        res = self.app.get('/api/relays')
+        relays = json.loads(res.data.decode('utf8'))['relays']
         assert relays[0]['on_user_override'] is False
         assert relays[0]['state_str'] == 'on'
 
-        data = {
-            state_str: 'off'
-        }
-        res = self.app.post('/api/relays/1', data)
+        res = self.app.post('/api/relays/24',
+                            data={'state_str': 'off'})
         assert res.status_code == 200
-        relays = json.loads(res.data.decode('utf8'))
-        assert relays[0]['on_user_override'] is True
-        assert relays[0]['state_str'] == 'off'
+        relay = json.loads(res.data.decode('utf8'))['relay']
+        assert relay['on_user_override'] is True
+        assert relay['state_str'] == 'off'
+
+    def test_relay_api_put_relay_remove_override(self):
+        res = self.app.post('/api/relays/24',
+                            data={'state_str': 'off'})
+        assert res.status_code == 200
+        relay = json.loads(res.data.decode('utf8'))['relay']
+        assert relay['on_user_override'] is True
+        assert relay['state_str'] == 'off'
+
+        res = self.app.post('/api/relays/24',
+                            data={'state_str': 'auto'})
+        assert res.status_code == 200
+        relay = json.loads(res.data.decode('utf8'))['relay']
+        assert relay['on_user_override'] is False
+        assert relay['state_str'] == 'on'
 
 
 if __name__ == '__main__':

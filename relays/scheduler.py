@@ -1,4 +1,77 @@
 import datetime as dt
+from time import sleep
+
+
+GPIO = None
+
+
+def start(schedules, synced_pins, _GPIO):
+    global GPIO
+    GPIO = _GPIO
+
+    try:
+        control_relays(schedules, synced_pins)
+    except KeyboardInterrupt:
+        print('Got KeyboardInterrupt.')
+    except Exception as e:
+        print('Got unexpected fatal Exception: %s' % str(e))
+    finally:
+        # Reset GPIO
+        GPIO.cleanup()
+
+
+def control_relays(schedules, synced_pins):
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
+
+    for schedule in schedules:
+        setup_pins(schedule.pins, synced_pins)
+
+    while True:
+        control_and_sleep(schedules, synced_pins)
+        sleep(1)  # Overflow next schedule
+
+
+def update_pins_on_auto(pin_nums, state_str, synced_pins):
+    for pin_num in pin_nums:
+        pin = synced_pins[pin_num]
+        if pin.on_user_override:
+            print('Pin %d is on user_override. Keeping current state.'
+                  % pin.bcm_pin_num)
+        else:
+            pin.apply_state(state_str)
+        synced_pins[pin_num] = pin
+
+
+def setup_pins(pin_nums, synced_pins):
+    for pin_num in pin_nums:
+        # Off
+        pin = synced_pins[pin_num]
+        GPIO.setup(pin.bcm_pin_num, GPIO.OUT, initial=1)
+
+
+def control_and_sleep(schedules, synced_pins):
+    now = dt.datetime.now()
+    print('Currently %s.' % str(now))
+    for schedule in schedules:
+        wanted_state = schedule.get_latest_event(now)[1]
+        update_pins_on_auto(schedule.pins, wanted_state, synced_pins)
+
+    next_change_in = get_sleep_for(schedules, dt.datetime.now())
+
+    print('Next_change_in %s' % next_change_in)
+    sleep(next_change_in)
+
+
+def get_sleep_for(schedules, now):
+    next_event = None
+
+    for schedule in schedules:
+        schedule_next_event = schedule.get_next_event(now)[0]
+        if not next_event or schedule_next_event < next_event:
+            next_event = schedule_next_event
+
+    return (next_event - now).total_seconds()
 
 
 def time_to_datetime(t, datetime_base):
@@ -38,7 +111,7 @@ class Schedule():
     def __init__(self, pins, open_time, run_for, repeat_every=None,
                  repeat_until=None):
         """
-        pins: Pin objects to control
+        pins: Pin ids to control
         open_time: First open time of the day
         run_for: Keep open for this amount of time (tuple of (h, m, s))
         repeat_every: Repeat each amount of time (tuple of (h, m, s)) or 'None'
