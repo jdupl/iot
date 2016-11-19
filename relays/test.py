@@ -208,22 +208,39 @@ class PinTest(unittest.TestCase):
 class RelayApiTest(unittest.TestCase):
 
     def setUp(self):
-        relays.setup('test', 'config/test.yaml')
-        self.app = app.test_client()
+        with mock_datetime(2016, 5, 30, 6, 1):
+            relays.main('test', 'config/test.yaml')
+            self.app = app.test_client()
 
     def tearDown(self):
         relays.interrupt()
 
-    def test_relay_api_send_relays(self):
+    def test_relay_api_get_relays(self):
         res = self.app.get('/api/relays')
         assert res.status_code == 200
 
         relays = json.loads(res.data.decode('utf8'))
         assert 'relays' in relays
         relays = relays['relays']
-
         assert len(relays) == 1
+        print(relays[0]['state_str'])
         assert relays[0]['state_str'] == 'on'
+
+    def test_relay_api_put_relay(self):
+        res = self.app.get('/api/relays/')
+        relays = json.loads(res.data.decode('utf8'))
+        assert relays[0]['on_user_override'] is False
+        assert relays[0]['state_str'] == 'on'
+
+        data = {
+            state_str: 'off'
+        }
+        res = self.app.post('/api/relays/1', data)
+        assert res.status_code == 200
+        relays = json.loads(res.data.decode('utf8'))
+        assert relays[0]['on_user_override'] is True
+        assert relays[0]['state_str'] == 'off'
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,9 +4,9 @@ import yaml
 import atexit
 import datetime as dt
 
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Lock
 from schedule import Schedule
-from flask import Flask, jsonify
+from flask import Flask, jsonify, g
 
 
 class FakeGPIO():
@@ -31,10 +31,11 @@ class FakeGPIO():
 
 
 GPIO = FakeGPIO
-relays_updater = None
+relays_updater_process = None
+relay_api_process = None
 
 app = Flask(__name__)
-q = Queue(20)
+schedules = []
 schedules_cache = []
 
 
@@ -84,15 +85,14 @@ def setup_pins(pins):
         GPIO.setup(pin.bcm_pin_num, GPIO.OUT, initial=1)
 
 
-def control_and_sleep(schedules, queue):
+def control_and_sleep(schedules, pins_lock):
     now = dt.datetime.now()
     print('Currently %s.' % str(now))
-
+    pins_lock.acquire()
     for schedule in schedules:
         wanted_state = schedule.get_latest_event(now)[1]
         update_pins_on_auto(schedule.pins, wanted_state)
-
-    queue.put(schedules)
+    pins_lock.release()
 
     next_change_in = get_sleep_for(schedules, dt.datetime.now())
 
@@ -111,7 +111,7 @@ def get_sleep_for(schedules, now):
     return (next_event - now).total_seconds()
 
 
-def control_relays(schedules, queue):
+def control_relays(schedules, pins_lock):
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
 
@@ -119,7 +119,7 @@ def control_relays(schedules, queue):
         setup_pins(schedule.pins)
 
     while True:
-        control_and_sleep(schedules, queue)
+        control_and_sleep(schedules, pins_lock)
         time.sleep(1)  # Overflow next schedule
 
 
@@ -149,49 +149,79 @@ def __to_pub_list(elements):
 
 @app.route('/api/relays', methods=['GET'])
 def get_relays():
-    global schedules_cache
-    while not q.empty():
-        schedules_cache = q.get()
+    global schedules
+    print('FLASK Schedules are', schedules)
     pins = []
-    for s in schedules_cache:
+    for s in schedules:
         pins.extend(s.pins)
     return jsonify({'relays': __to_pub_list(pins)}), 200
 
 
+@app.route('/api/relays/:pin_id', methods=['POST'])
+def put_relays(pin_id):
+    d = request.get_json()
+
+    wanted_state = d['state_str']
+    reset_to_auto = wanted_state == 'auto'
+
+    if reset_to_auto:
+        pass
+
+
 def interrupt():
-    global relays_updater
-    if relays_updater:
-        relays_updater.terminate()
+    global relays_updater_process, relay_api_process
+    if relays_updater_process:
+        relays_updater_process.terminate()
+    if relay_api_process:
+        relay_api_process.terminate()
 
 
-def setup(env=None, relay_config_path='config/default.yaml'):
-    global relays_updater
+def launch_api(relay_api_app, pins_lock, schedules):
+    relay_api_app.pins_lock = pins_lock
+    relay_api_app.run(use_reloader=False)
 
-    def update_relays(schedules, queue):
-        if env != 'dev' and env != 'test':
-            import RPi.GPIO as GPIO
-        else:
-            GPIO = FakeGPIO
 
-        try:
-            control_relays(schedules, queue)
-        except KeyboardInterrupt:
-            print('Got KeyboardInterrupt.')
-        except Exception as e:
-            print('Got unexpected fatal Exception: %s' % str(e))
-        finally:
-            # Reset GPIO
-            GPIO.cleanup()
+def update_relays(schedules, pins_lock, env):
+    if env != 'dev' and env != 'test':
+        import RPi.GPIO as GPIO
+    else:
+        GPIO = FakeGPIO
 
-    app.config.from_pyfile('config/api/default.py')
-    app.config.from_pyfile('config/api/%s.py' % env, silent=True)
+    try:
+        control_relays(schedules, pins_lock)
+    except KeyboardInterrupt:
+        print('Got KeyboardInterrupt.')
+    except Exception as e:
+        print('Got unexpected fatal Exception: %s' % str(e))
+    finally:
+        # Reset GPIO
+        GPIO.cleanup()
 
-    schedules = read_config(relay_config_path)
-    relays_updater = Process(target=update_relays, args=(schedules, q,))
-    relays_updater.start()
+
+def main(env=None, relay_config_path='config/default.yaml'):
+    global relays_updater_process, relay_api_process, schedules
     atexit.register(interrupt)
 
-    return app
+    pins_lock = Lock()
+
+    # Setup schedules
+    schedules = read_config(relay_config_path)
+    print('Schedules are', schedules)
+
+    # Setup updater process
+    relays_updater_process = Process(target=update_relays,
+                                     args=(schedules, pins_lock, env,))
+    from time import sleep
+    sleep(5)
+    # Setup Flask process
+    app.config.from_pyfile('config/api/default.py')
+    app.config.from_pyfile('config/api/%s.py' % env, silent=True)
+    relay_api_process = Process(target=launch_api,
+                                args=(app, pins_lock, schedules,))
+
+    relays_updater_process.start()
+    relay_api_process.start()
+
 
 if __name__ == '__main__':
-    setup(sys.argv[1] if len(sys.argv) > 1 else None).run(use_reloader=False)
+    main(sys.argv[1] if len(sys.argv) > 1 else None)
