@@ -10,10 +10,11 @@ def _get_last_watering_timestamp(sensor_uuid):
     """Try to find last watering from the last 500 records of the sensor.
        A diffenrece of `watering_thresold` must be found between now and then
        to be considered a watering."""
-    watering_thresold = 100  # Minimum fluctuation to consider a watering
+    watering_thresold = 50  # Minimum fluctuation to consider a watering
 
-    records = HygroRecord.query.filter(HygroRecord.sensor_uuid == sensor_uuid) \
-        .order_by(desc(HygroRecord.timestamp)).limit(500).all()
+    records = HygroRecord.query \
+        .filter(HygroRecord.sensor_uuid == sensor_uuid) \
+        .order_by(desc(HygroRecord.timestamp)).limit(5000).all()
     last_record = records[0]
 
     for current in records[1:]:
@@ -27,7 +28,9 @@ def _get_last_watering_timestamp(sensor_uuid):
 
 
 def _get_polynomial(sensor_uuid, start, stop=dt.datetime.now()):
-    """Get a polynomial aproximation of the soil humidity function from data."""
+    """
+    Get a polynomial aproximation of the soil humidity function from data.
+    """
     x = []
     y = []
 
@@ -55,7 +58,7 @@ def _predict_at(at_time, polynom, last_watering_timestamp):
 def _predict_next_watering(polynom, last_watering_timestamp):
     """Extrapolate data with polynomial function to find next watering.
     """
-    max_tries = 168  # One week
+    max_tries = 2016  # One week
     step = 3600  # Step in seconds
     val = 0
     time = 0
@@ -64,7 +67,7 @@ def _predict_next_watering(polynom, last_watering_timestamp):
     while tries <= max_tries:
         val = polynomial.polyval(time, polynom)
 
-        if val <= 50:
+        if val <= 100:
             return time + last_watering_timestamp
 
         time += step
