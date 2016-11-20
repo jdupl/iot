@@ -23,8 +23,9 @@ def get_relays():
 
 @app.route('/api/relays/<pin_id>', methods=['POST'])
 def put_relays(pin_id):
+    pin_id = int(pin_id)
     data = request.form
-    p = synced_pins[int(pin_id)]
+    p = synced_pins[pin_id]
 
     wanted_state = data['state_str']
     reset_to_auto = wanted_state == 'auto'

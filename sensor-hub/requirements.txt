@@ -1,4 +1,4 @@
 Flask==0.10.1
 Flask-SqlAlchemy==2.1
 numpy==1.11.1
-requests==2.11.1
+requests==2.12.1

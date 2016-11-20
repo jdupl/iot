@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import sys
-import atexit
+# import atexit
 import threading
 import requests
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from sqlalchemy import func
 
 # Own modules
@@ -130,7 +130,15 @@ def _get_relays():
 
 @app.route('/api/relays', methods=['GET'])
 def get_relays():
-    return jsonify({'relays': _get_relays()}), 200
+    r = requests.get('http://localhost:5002/api/relays')
+    return jsonify(r.json()), 200
+
+
+@app.route('/api/relays/<id>', methods=['POST'])
+def put_relays(id):
+    r = requests.post('http://localhost:5002/api/relays/%s' % id,
+                      data=request.json)
+    return jsonify(r.json()), 200
 
 
 @app.route('/api/records/latest', methods=['GET'])
@@ -174,6 +182,19 @@ def add_record():
         return 'ok', 200
     except Exception:
         return __bad_request()
+
+
+@app.route('/')
+def index():
+    return send_from_directory('public', 'index.html')
+
+
+@app.route('/<path:path>')
+def static_files(path):
+    if '.' not in path:
+        return index()
+
+    return send_from_directory('public', path)
 
 
 def extract_object_from_arduino_piece(piece, timestamp, arduino_uuid):

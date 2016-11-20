@@ -108,7 +108,7 @@ def start_scheduler(synced_schedules, synced_pins, env):
 
 
 def launch_api(flask_app):
-    flask_app.run(use_reloader=False)
+    flask_app.run(use_reloader=False, port=5002)
 
 
 def main(env=None, relay_config_path='config/default.yaml'):
