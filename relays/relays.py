@@ -156,4 +156,6 @@ def main(env=None, relay_config_path='config/default.yaml'):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1] if len(sys.argv) > 1 else None)
+    env = sys.argv[1] if len(sys.argv) > 1 else 'default'
+    config_path = 'config/%s.yaml' % env
+    main(env, config_path)

@@ -15,8 +15,8 @@
 -
   name: Fan system 1
   gpio_bcm_pins: [22]
-  start_at: '5:0:0'
-  run_for: '0:5:0'
+  start_at: '5:0:30'
+  run_for: '0:4:30'
   repeat_every: '1:0:0'
   uuid: 3
 
@@ -24,6 +24,6 @@
   name: Fan system 2
   gpio_bcm_pins: [25]
   start_at: '5:5:0'
-  run_for: '0:5:0'
+  run_for: '0:4:30'
   repeat_every: '1:0:0'
   uuid: 4
