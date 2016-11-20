@@ -13,14 +13,10 @@ def __to_pub_list(elements):
 
 @app.route('/api/relays', methods=['GET'])
 def get_relays():
-    global synced_schedules, synced_pins
-    pin_nums = []
+    global synced_pins
     pins = []
-    for s in synced_schedules:
-        pin_nums.extend(s.pins)
-
-    for pin_num in pin_nums:
-        pins.append(synced_pins[pin_num])
+    for p in synced_pins.values():
+        pins.append(p)
 
     return jsonify({'relays': __to_pub_list(pins)}), 200
 
