@@ -116,13 +116,17 @@ def main(env=None, relay_config_path='config/default.yaml'):
     global child_processes, flask_app, manager, GPIO
     atexit.register(interrupt)
 
+    # Setup schedules and pins
+    schedules, pins = read_config(relay_config_path)
+
     GPIO = FakeGPIO
     if env != 'dev' and env != 'test':
         import RPi.GPIO as _GPIO
         GPIO = _GPIO
-
-    # Setup schedules and pins
-    schedules, pins = read_config(relay_config_path)
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BCM)
+        for pin in pins.values():
+            GPIO.setup(pin.bcm_pin_num, GPIO.OUT, initial=1)
 
     # Setup var manager
     manager = SyncManager(address=('127.0.0.1', 5001))
