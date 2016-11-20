@@ -130,13 +130,13 @@ def _get_relays():
 
 @app.route('/api/relays', methods=['GET'])
 def get_relays():
-    r = requests.get('http://localhost:5002/api/relays')
+    r = requests.get('%s/api/relays' % app.config['RELAYS_HOST'])
     return jsonify(r.json()), 200
 
 
 @app.route('/api/relays/<id>', methods=['POST'])
 def put_relays(id):
-    r = requests.post('http://localhost:5002/api/relays/%s' % id,
+    r = requests.post('%s/api/relays/%s' % (app.config['RELAYS_HOST'], id),
                       data=request.json)
     return jsonify(r.json()), 200
 
