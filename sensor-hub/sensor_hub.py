@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import sys
-# import atexit
-import threading
 import requests
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -16,7 +14,6 @@ from models import HygroRecord, DHT11Record, PhotocellRecord
 
 POOL_TIME = 5  # Seconds
 relays = []
-relays_updater = threading.Thread()
 
 app = Flask(__name__)
 
@@ -123,11 +120,6 @@ def get_dht11_history(since_epoch_sec):
     return history
 
 
-def _get_relays():
-    global relays
-    return relays
-
-
 @app.route('/api/relays', methods=['GET'])
 def get_relays():
     r = requests.get('%s/api/relays' % app.config['RELAYS_HOST'])
@@ -143,7 +135,6 @@ def put_relays(id):
 
 @app.route('/api/records/latest', methods=['GET'])
 def get_lastest_records():
-
     return jsonify({'latest': {
         'soil_humidity': get_latest_soil_humidity(),
         'dht11': get_lastest_dht11(),
@@ -153,7 +144,6 @@ def get_lastest_records():
 
 @app.route('/api/records/<since_epoch_sec>', methods=['GET'])
 def get_records_history(since_epoch_sec):
-
     return jsonify({'history': {
         'soil_humidity': get_soil_humidity_history(since_epoch_sec),
         'dht11': get_dht11_history(since_epoch_sec),
@@ -208,53 +198,11 @@ def extract_object_from_arduino_piece(piece, timestamp, arduino_uuid):
     return models.dict_to_obj(sensor_type, sensor_uuid, timestamp, args)
 
 
-def _get_new_relays(relays_ip):
-    r = requests.get('http://%s/api/relays' % relays_ip)
-
-    if r.status_code == 200:
-        return r.json()
-    else:
-        print(r.status_code)
-
-
-# def interrupt():
-#     global relays_updater
-#     relays_updater.cancel()
-
-
 def setup(env=None):
-    # def interrupt():
-    #     global relays_updater
-    #     relays_updater.cancel()
-    #
-    # def update_relays():
-    #     global relays
-    #     global relays_updater
-    #
-    #     try:
-    #         new_relays = []
-    #         if env != 'test':
-    #             new_relays = _get_new_relays('localhost:8080')
-    #             relays = new_relays
-    #     except Exception as e:
-    #         print(e)
-    #
-    #     # Setup next execution
-    #     relays_updater = threading.Timer(POOL_TIME, update_relays, ())
-    #     relays_updater.start()
-    #
-    # def do_update_relays():
-    #     global relays_updater
-    #     relays_updater = threading.Timer(POOL_TIME, update_relays, ())
-    #     relays_updater.start()
-
     app.config.from_pyfile('config/default.py')
     app.config.from_pyfile('config/%s.py' % env, silent=True)
 
     init_db(app.config['DATABASE_URI'])
-
-    # do_update_relays()
-    # atexit.register(interrupt)
 
     return app
 
