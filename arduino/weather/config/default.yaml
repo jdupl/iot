@@ -1,0 +1,13 @@
+update_delay: 1800 # Update every n seconds
+
+digital_pins:
+    green_led: 6
+    dht_11: 2
+
+wifi:
+    ssid: your_ssid
+    password: your_password
+
+sensor_hub:
+    ip: ip_or_domain
+    port: 80
