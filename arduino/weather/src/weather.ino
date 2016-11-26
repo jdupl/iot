@@ -1,10 +1,8 @@
-#include <dht11.h>
+#include <SimpleDHT.h>
 #include <SoftwareSerial.h>
 
-const int espRX = changeme; // esp_board_rx
-const int espTX = changeme; // esp_board_tx
 // RX, TX
-SoftwareSerial softSerial(espRX, espTX);
+SoftwareSerial softSerial(10, 11);
 
 const String SSID = "changeme"; // wifi_ssid
 const String password = "changeme"; // wifi_password
@@ -13,9 +11,9 @@ const String password = "changeme"; // wifi_password
 // const String serverPort = "changeme"; // sensor_hub_port
 
 const unsigned long updateDelay = changeme; // update_delay
-// const int sensorPins[] = {changeme}; // hygrometer_pins
 
-// Open circuit with relay when sensors are not in use to reduce oxidation
+const String uuid = "changeme"; // arduino_uuid
+
 const int DHT11_PIN = changeme; // digital_pins_dht_11
 const int GREEN_LED_PIN = changeme; // digital_pins_green_led
 
@@ -25,7 +23,12 @@ unsigned long epochInit = 0;
 unsigned long epochMesuredAt = 0;
 unsigned long lastSuccessUpdate = 0;
 
-dht11 DHT11;
+SimpleDHT11 dht11;
+
+struct DHT11Res {
+  int temp;
+  int rel_humidity;
+};
 
 bool poolNTP(unsigned long timeout) {
     unsigned long tExpire = millis() + timeout;
@@ -62,11 +65,11 @@ bool poolNTP(unsigned long timeout) {
 bool execOnESP(String cmd, String expectedRes, unsigned long timeout) {
     unsigned long tExpire = millis() + timeout;
     String response = "";
-    // softSerial.flush();
     Serial.flush();
     softSerial.println(cmd);
     Serial.println(cmd);
     Serial.flush();
+
     while (millis() < tExpire) {
         char c = Serial.read();
         if (c >= 0) {
@@ -78,7 +81,6 @@ bool execOnESP(String cmd, String expectedRes, unsigned long timeout) {
         }
     }
     softSerial.println("Unexpected: " + response);
-    softSerial.println("Unexpected: " + response.length());
     return false;
 }
 
@@ -99,7 +101,7 @@ bool setEpoch() {
 
     // combine the four bytes (two words) into a long integer
     epochInit = (highWord << 16 | lowWord) - 2208988800UL;
-    softSerial.println('Epoch is set')
+    // softSerial.println("Epoch is set");
     return true;
 }
 
@@ -135,7 +137,9 @@ bool epochNeedsUpdate() {
 }
 
 bool connect() {
+    // softSerial.println("Trying to connect to wifi");
     while (!connectWifi()) {
+        // softSerial.println("Could not connect to wifi");
         delay(10000);
     }
 
@@ -149,25 +153,74 @@ bool connect() {
         if (setEpoch()) {
             return true;
         }
+        // softSerial.println("Failed to setEpoch");
         delay(10000);
     }
     return false;
 }
 
+struct DHT11Res readDHT11Retry() {
+    byte temperature = 0;
+    byte humidity = 0;
+    int tries = 0;
+
+    while (tries++ < 5) {
+      if (!dht11.read(DHT11_PIN, &temperature, &humidity, NULL)) {
+        // softSerial.println("Got from DHT11: " + temperature + " C, " + humidity + " % humidity");
+        return DHT11Res {(int)temperature, (int)humidity};
+      }
+      delay(2000);
+    }
+    // softSerial.println("Tried to read 5 times from DHT11. Aborting.");
+    return {99, 99};
+}
+
+boolean isResValid(struct DHT11Res res) {
+  return res.temp != 99 && res.rel_humidity != 99;
+}
+
+String getBMPReqContent() {
+    return "";
+}
+
+String getHygrometerReqContent() {
+    return "";
+}
+
+String getDHT11ReqContent() {
+    DHT11Res res = readDHT11Retry();
+    if (isResValid(res)) {
+      return ",dht11_4:" + String(res.temp) + ';' + String(res.rel_humidity);
+    } else {
+      softSerial.println("No valid DHT11 result !");
+    }
+    return "";
+}
+
+String buildRequestContent() {
+    String content =  ((String) getEpoch());
+    content += ',' + uuid;
+    content += getDHT11ReqContent();
+    content += getHygrometerReqContent();
+    content += getBMPReqContent();
+    return content;
+}
+
+
 void setup() {
     delay(1000);
     softSerial.begin(9600);
     Serial.begin(115200);
-    pinMode(GREEN_LED_PIN, OUTPUT);      // sets the digital pin as output
+    pinMode(GREEN_LED_PIN, OUTPUT);
+
     delay(1000);
-    softSerial.println("SETUP");
     while (!connect()) {}
-
-    setup GREEN_LED_PIN
-
+    digitalWrite(GREEN_LED_PIN, 1);
 }
 
+
 void loop() {
-    digitalWrite(GREEN_LED_PIN, 1);
     delay(1000);
+    readDHT11Retry();
+    softSerial.println(getDHT11ReqContent());
 }

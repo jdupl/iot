@@ -1,4 +1,5 @@
 update_delay: 1800 # Update every n seconds
+arduino_uuid: a_uuid
 
 digital_pins:
     green_led: 6
