@@ -1,5 +1,8 @@
 #include <SimpleDHT.h>
 #include <SoftwareSerial.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BMP280.h>
 
 // RX, TX
 SoftwareSerial softSerial(10, 11);
@@ -16,6 +19,10 @@ const String uuid = "changeme"; // arduino_uuid
 
 const int DHT11_PIN = changeme; // digital_pins_dht_11
 const int GREEN_LED_PIN = changeme; // digital_pins_green_led
+const int RAIN_PIN = changeme; // analog_pins_rain_detector
+const int RELAY_PIN = changeme; // digital_pins_relay
+
+const int BMP_ADDR = 0x76; // bmp_address
 
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
@@ -23,7 +30,9 @@ unsigned long epochInit = 0;
 unsigned long epochMesuredAt = 0;
 unsigned long lastSuccessUpdate = 0;
 
+
 SimpleDHT11 dht11;
+Adafruit_BMP280 bme;
 
 struct DHT11Res {
   int temp;
@@ -153,7 +162,6 @@ bool connect() {
         if (setEpoch()) {
             return true;
         }
-        // softSerial.println("Failed to setEpoch");
         delay(10000);
     }
     return false;
@@ -166,12 +174,10 @@ struct DHT11Res readDHT11Retry() {
 
     while (tries++ < 5) {
       if (!dht11.read(DHT11_PIN, &temperature, &humidity, NULL)) {
-        // softSerial.println("Got from DHT11: " + temperature + " C, " + humidity + " % humidity");
         return DHT11Res {(int)temperature, (int)humidity};
       }
       delay(2000);
     }
-    // softSerial.println("Tried to read 5 times from DHT11. Aborting.");
     return {99, 99};
 }
 
@@ -180,11 +186,21 @@ boolean isResValid(struct DHT11Res res) {
 }
 
 String getBMPReqContent() {
-    return "";
+    if (!bme.begin(BMP_ADDR)) {
+        // Serial.println("Could not find a valid BMP280 sensor, check wiring!");
+        return "";
+    }
+
+    int temp = (int)(bme.readTemperature() * 100); // Centidegree celsius
+    int pressure = (int) bme.readTemperature(); // Pa
+    return ",bmp_1:" + String(temp) + ';' + String(pressure);
 }
 
-String getHygrometerReqContent() {
-    return "";
+String getRainReqContent() {
+    digitalWrite(RELAY_PIN, 1);
+    int rain = analogRead(RAIN_PIN);
+    digitalWrite(RELAY_PIN, 0);
+    return ",rain_1:" + String(rain);
 }
 
 String getDHT11ReqContent() {
@@ -198,29 +214,25 @@ String getDHT11ReqContent() {
 }
 
 String buildRequestContent() {
-    String content =  ((String) getEpoch());
-    content += ',' + uuid;
-    content += getDHT11ReqContent();
-    content += getHygrometerReqContent();
-    content += getBMPReqContent();
-    return content;
+    return ((String) getEpoch()) + ',' + uuid + getDHT11ReqContent()
+        + getRainReqContent() + getBMPReqContent();
 }
-
 
 void setup() {
     delay(1000);
     softSerial.begin(9600);
     Serial.begin(115200);
+
     pinMode(GREEN_LED_PIN, OUTPUT);
+    pinMode(RELAY_PIN, OUTPUT);
+    pinMode(RAIN_PIN, INPUT);
 
     delay(1000);
     while (!connect()) {}
     digitalWrite(GREEN_LED_PIN, 1);
 }
 
-
 void loop() {
     delay(1000);
-    readDHT11Retry();
-    softSerial.println(getDHT11ReqContent());
+    softSerial.println(buildRequestContent());
 }

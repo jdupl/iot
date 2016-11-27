@@ -3,7 +3,11 @@ arduino_uuid: a_uuid
 
 digital_pins:
     green_led: 6
-    dht_11: 2
+    relay: 2
+    dht_11: 4
+
+analog_pins:
+    rain_detector: 7
 
 wifi:
     ssid: your_ssid
