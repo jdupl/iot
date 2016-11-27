@@ -10,7 +10,8 @@ import analytics
 
 from database import db_session, init_db
 import models
-from models import HygroRecord, DHT11Record, PhotocellRecord
+from models import HygroRecord, DHT11Record, PhotocellRecord, BMPRecord, \
+    RainRecord
 
 POOL_TIME = 5  # Seconds
 relays = []
@@ -63,6 +64,18 @@ def get_lastest_photocell():
     return __to_pub_list(
         PhotocellRecord.query.group_by(PhotocellRecord.sensor_uuid)
         .having(func.max(PhotocellRecord.timestamp)).all())
+
+
+def get_lastest_rain():
+    return __to_pub_list(
+        RainRecord.query.group_by(RainRecord.sensor_uuid)
+        .having(func.max(RainRecord.timestamp)).all())
+
+
+def get_lastest_bmp():
+    return __to_pub_list(
+        BMPRecord.query.group_by(BMPRecord.sensor_uuid)
+        .having(func.max(BMPRecord.timestamp)).all())
 
 
 def get_soil_humidity_history(since_epoch_sec):
@@ -120,6 +133,53 @@ def get_dht11_history(since_epoch_sec):
     return history
 
 
+def get_dht11_history_weather(since_epoch_sec):
+    """Gets history from a DHT11 sensors."""
+
+    history = []
+    records = DHT11Record.query\
+        .filter(DHT11Record.timestamp >= since_epoch_sec).all()
+
+    for r in records:
+        history.append({
+            'x': r.timestamp,
+            'temperature': r.temperature,
+            'rel_humidity': r.rel_humidity
+        })
+    return history
+
+
+def get_bmp_history_weather(since_epoch_sec):
+    """Gets history from BMP sensors."""
+
+    history = []
+    records = BMPRecord.query\
+        .filter(BMPRecord.timestamp >= since_epoch_sec).all()
+
+    for r in records:
+        history.append({
+            'x': r.timestamp,
+            'temperature': r.temperature,
+            'pressure_kpa': round(r.pressure / 1000.0, 2)
+        })
+    return history
+
+
+def get_rain_history_weather(since_epoch_sec):
+    """Gets history from rain sensors."""
+
+    history = []
+    records = RainRecord.query\
+        .filter(RainRecord.timestamp >= since_epoch_sec).all()
+
+    for r in records:
+        history.append({
+            'x': r.timestamp,
+            'value': r.value
+        })
+    return history
+
+
 @app.route('/api/relays', methods=['GET'])
 def get_relays():
     r = requests.get('%s/api/relays' % app.config['RELAYS_HOST'])
@@ -135,19 +195,46 @@ def put_relays(id):
 
 @app.route('/api/records/latest', methods=['GET'])
 def get_lastest_records():
+    if app.config['WEATHER_MODE']:
+        return jsonify({'latest': {
+            'dht11': get_lastest_dht11(),
+            'rain': get_lastest_rain(),
+            'bmp': get_lastest_bmp(),
+        }}), 200
+
     return jsonify({'latest': {
         'soil_humidity': get_latest_soil_humidity(),
         'dht11': get_lastest_dht11(),
-        'photocell': get_lastest_photocell(),
+        'photocell': get_lastest_photocell()
     }}), 200
 
 
 @app.route('/api/records/<since_epoch_sec>', methods=['GET'])
 def get_records_history(since_epoch_sec):
+    if not app.config['WEATHER_MODE']:
+        return jsonify({'history': {
+            'soil_humidity': get_soil_humidity_history(since_epoch_sec),
+            'dht11': get_dht11_history(since_epoch_sec),
+            'photocell': get_photocell_history(since_epoch_sec)
+            }}), 200
+
+    combined = {
+        'dht11': [],
+        'bmp': []
+    }
+    dht11 = get_dht11_history_weather(since_epoch_sec)
+    for r in dht11:
+        combined['dht11'].append(r)
+
+    bmp = get_bmp_history_weather(since_epoch_sec)
+    for r in bmp:
+        combined['bmp'].append(r)
+
     return jsonify({'history': {
-        'soil_humidity': get_soil_humidity_history(since_epoch_sec),
-        'dht11': get_dht11_history(since_epoch_sec),
-        'photocell': get_photocell_history(since_epoch_sec),
+        'combined': combined,
+        'dht11': get_dht11_history_weather(since_epoch_sec),
+        'rain': get_rain_history_weather(since_epoch_sec),
+        'bmp': get_bmp_history_weather(since_epoch_sec),
     }}), 200
 
 
@@ -177,6 +264,8 @@ def add_record():
 
 @app.route('/')
 def index():
+    if app.config['WEATHER_MODE']:
+        return send_from_directory('public/weather', 'index.html')
     return send_from_directory('public', 'index.html')
 
 
@@ -185,6 +274,8 @@ def static_files(path):
     if '.' not in path:
         return index()
 
+    if app.config['WEATHER_MODE']:
+        return send_from_directory('public/weather', path)
     return send_from_directory('public', path)
 
 
@@ -204,9 +295,10 @@ def setup(env=None):
     app.config.from_pyfile('config/%s.py' % env, silent=True)
 
     init_db(app.config['DATABASE_URI'])
-
     return app
 
 
 if __name__ == '__main__':
-    setup(sys.argv[1] if len(sys.argv) > 1 else None).run(use_reloader=False)
+    app = setup(sys.argv[1] if len(sys.argv) > 1 else None)
+    app.run(use_reloader=False, port=app.config['PORT'],
+            host=app.config['HOST'])

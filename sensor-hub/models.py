@@ -83,6 +83,12 @@ class BMPRecord(Base, Record):
         self.temperature = int(temperature) / 100.0
         self.pressure = int(pressure)
 
+    def as_pub_dict(self):
+        pub = Record.as_pub_dict(self)
+        pub['pressure_kpa'] = round(self.pressure / 1000.0, 2)
+        pub['temperature'] = self.temperature
+        return pub
+
 
 def dict_to_obj(sensor_type_str, sensor_id, timestamp, args):
     resolver = {

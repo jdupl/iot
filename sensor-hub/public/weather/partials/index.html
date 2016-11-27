@@ -1,0 +1,38 @@
+<div class="container">
+    <div ng-if="!serverLinkOK()">
+        <div class="row">
+            <div class="alert alert-danger" role="alert">
+                <span>
+                    <h3>
+                        Server link down ! <span am-time-ago="lastUpdate"></span>
+                    </h3>
+                    <button type="button" class="btn btn-default" ng-click="refresh()">
+                        <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
+                    </button>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-primary"  style="margin: 6px">
+        <div class="panel-heading">
+            <h3 class="panel-title">{{records.bmp.sensor_uuid}}</h3>
+        </div>
+        <div class="panel-body">
+            <h2>{{records.bmp[0].temperature}} °C</h2>
+            <h2>{{records.dht11[0].rel_humidity}} % humidity</h2>
+            <h2>{{records.bmp[0].pressure_kpa}} kPa</h2>
+            <h2>{{records.rain[0].value / 1024 * 100}} % probality of recent rain</h2>
+        </div>
+    </div>
+    <div class="graph-container">
+        <linechart data="data_history.combined" options="options['combined']"></linechart>
+    </div>
+
+    <div class="graph-container">
+        <linechart data="data_history" options="options['bmp_pressure']"></linechart>
+    </div>
+    <div class="graph-container">
+        <linechart data="data_history" options="options['rain']"></linechart>
+    </div>
+</div>

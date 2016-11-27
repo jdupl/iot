@@ -10,8 +10,8 @@ SoftwareSerial softSerial(10, 11);
 const String SSID = "changeme"; // wifi_ssid
 const String password = "changeme"; // wifi_password
 
-// const String serverIp = "changeme"; // sensor_hub_ip
-// const String serverPort = "changeme"; // sensor_hub_port
+const String serverIp = "changeme"; // sensor_hub_ip
+const String serverPort = "changeme"; // sensor_hub_port
 
 const unsigned long updateDelay = changeme; // update_delay
 
@@ -232,7 +232,32 @@ void setup() {
     digitalWrite(GREEN_LED_PIN, 1);
 }
 
+bool sendToSensorHub() {
+    unsigned long measuredAt = getEpoch();
+
+    String content = buildRequestContent();
+    String request = "POST /api/records HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
+
+    if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\"," + serverPort, "OK", 5000))
+        return false;
+
+    int reqLength = request.length() + 2; // add 2 because \r\n will be appended by SoftwareSerial.println().
+    if (!execOnESP("AT+CIPSEND=" + String(reqLength) , "OK", 10000)) {
+        return false;
+    }
+
+    if (!execOnESP(request, "200 OK" , 15000)) {
+        return false;
+    }
+    lastSuccessUpdate = measuredAt;
+    delay(500);
+    // most of the time, already closed, but make sure
+    execOnESP("AT+CIPCLOSE", "OK" , 2000);
+
+    return true;
+}
+
 void loop() {
-    delay(1000);
-    softSerial.println(buildRequestContent());
+    sendToSensorHub();
+    delay(updateDelay * 1000);
 }

@@ -45,6 +45,7 @@ def create_records(pin_num):
         db_session.commit()
         db_session.close()
 
+
 if __name__ == '__main__':
     setup()
     create_records(1)
