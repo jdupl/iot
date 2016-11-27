@@ -192,7 +192,7 @@ String getBMPReqContent() {
     }
 
     int temp = (int)(bme.readTemperature() * 100); // Centidegree celsius
-    int pressure = (int) bme.readTemperature(); // Pa
+    long pressure = (long) bme.readPressure(); // Pa
     return ",bmp_1:" + String(temp) + ';' + String(pressure);
 }
 

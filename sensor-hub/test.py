@@ -9,7 +9,8 @@ from sqlalchemy import desc
 import sensor_hub
 import analytics
 
-from models import HygroRecord, PhotocellRecord, DHT11Record
+from models import HygroRecord, PhotocellRecord, DHT11Record, RainRecord, \
+    BMPRecord
 from sensor_hub import app, db_session
 
 
@@ -63,8 +64,8 @@ class HubTest(unittest.TestCase):
 
     def test_single_message_with_multiple_kinds_of_sensors(self):
         res = self.app.post(
-            '/api/records', data='1475429113,a_uuid,dht11_5:21;42,hygro_0:1024,'
-            'photocell_7:42')
+            '/api/records', data='1475429113,a_uuid,dht11_5:21;42,'
+            'hygro_0:1024,photocell_7:42')
         assert res.status_code == 200
 
         records = DHT11Record.query.all()
@@ -84,6 +85,31 @@ class HubTest(unittest.TestCase):
         self.assertEqual(records[2].sensor_uuid, 'a_uuid_photocell_7')
         self.assertEqual(records[2].timestamp, 1475429113)
         self.assertEqual(records[2].value, 42)
+
+    def test_weather_sensors(self):
+        res = self.app.post(
+            '/api/records', data='1480270946,a_uuid,'
+            'dht11_4:18;45,rain_1:20,bmp_1:2113;101427')
+        assert res.status_code == 200
+
+        records = DHT11Record.query.all()
+        records.append(*RainRecord.query.all())
+        records.append(*BMPRecord.query.all())
+
+        assert len(records) == 3
+        self.assertEqual(records[0].sensor_uuid, 'a_uuid_dht11_4')
+        self.assertEqual(records[0].timestamp, 1480270946)
+        self.assertEqual(records[0].temperature, 18)
+        self.assertEqual(records[0].rel_humidity, 45)
+
+        self.assertEqual(records[1].sensor_uuid, 'a_uuid_rain_1')
+        self.assertEqual(records[1].timestamp, 1480270946)
+        self.assertEqual(records[1].value, 20)
+
+        self.assertEqual(records[2].sensor_uuid, 'a_uuid_bmp_1')
+        self.assertEqual(records[2].timestamp, 1480270946)
+        self.assertEqual(records[2].temperature, 21.13)
+        self.assertEqual(records[2].pressure, 101427)
 
     def test_multiple_messages(self):
         data = ('1464181598,a_uuid,hygro_7:1024\n'
@@ -290,7 +316,7 @@ class AnalyticsTest(unittest.TestCase):
                 # print(prediction, r.value)
 
             self.assertEqual(analytics._predict_next_watering(
-                poly, 1468810074), 1468810074 + 108000)
+                poly, 1468810074), 1468889274)
 
 
 class mock_datetime(object):

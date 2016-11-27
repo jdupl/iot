@@ -170,7 +170,8 @@ def add_record():
 
         db_session.commit()
         return 'ok', 200
-    except Exception:
+    except Exception as e:
+        print(e)
         return __bad_request()
 
 
@@ -205,6 +206,7 @@ def setup(env=None):
     init_db(app.config['DATABASE_URI'])
 
     return app
+
 
 if __name__ == '__main__':
     setup(sys.argv[1] if len(sys.argv) > 1 else None).run(use_reloader=False)

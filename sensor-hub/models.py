@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Float
 
 from database import db_session, Base
 
@@ -63,11 +63,34 @@ class DHT11Record(Base, Record):
         return pub
 
 
+class RainRecord(Base, Record):
+    __tablename__ = 'records_rain'
+
+    value = Column(Integer)
+
+    def __init__(self, *args):
+        Record.__init__(self, *args)
+
+
+class BMPRecord(Base, Record):
+    __tablename__ = 'records_bmp'
+
+    temperature = Column(Float)
+    pressure = Column(Integer)
+
+    def __init__(self, sensor_uuid, timestamp, temperature, pressure):
+        Record.__init__(self, sensor_uuid, timestamp)
+        self.temperature = int(temperature) / 100.0
+        self.pressure = int(pressure)
+
+
 def dict_to_obj(sensor_type_str, sensor_id, timestamp, args):
     resolver = {
         'hygro': HygroRecord,
         'dht11': DHT11Record,
-        'photocell': PhotocellRecord
+        'photocell': PhotocellRecord,
+        'rain': RainRecord,
+        'bmp': BMPRecord
     }
     if sensor_type_str not in resolver:
         raise Exception('Unknown sensor type')
