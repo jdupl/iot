@@ -69,7 +69,7 @@ arduino/*/_build/plant-monitor.ino
 bower_components
 node_modules
 prod.db
-sensor-hub/config/me.py
+sensor-hub/config/my*.py
 
 # User configs
 **my*.yaml

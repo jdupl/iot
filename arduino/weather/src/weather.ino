@@ -102,8 +102,7 @@ bool setEpoch() {
         return false;
     if (!poolNTP(10000))
         return false;
-    if (!execOnESP("AT+CIPCLOSE", "OK", 10000))
-        return false;
+    execOnESP("AT+CIPCLOSE", "OK", 5000);
 
     unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
     unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
@@ -172,23 +171,56 @@ struct DHT11Res readDHT11Retry() {
     byte humidity = 0;
     int tries = 0;
 
-    while (tries++ < 5) {
+    while (tries++ < 3) {
       if (!dht11.read(DHT11_PIN, &temperature, &humidity, NULL)) {
         return DHT11Res {(int)temperature, (int)humidity};
       }
-      delay(2000);
+      delay(1000);
     }
     return {99, 99};
 }
 
-boolean isResValid(struct DHT11Res res) {
-  return res.temp != 99 && res.rel_humidity != 99;
+boolean isResValidDHT11(struct DHT11Res res) {
+    return res.temp != 99 && res.rel_humidity != 99;
+}
+
+bool withinMarging(int firstN, int secondN, int percent) {
+    float decimalPercent = percent / 100.0;
+    float highRange = secondN * (1.0 + decimalPercent);
+    float lowRange = secondN * (1.0 - decimalPercent);
+
+    return lowRange <= firstN && firstN <= highRange;
 }
 
 String getBMPReqContent() {
-    if (!bme.begin(BMP_ADDR)) {
-        // Serial.println("Could not find a valid BMP280 sensor, check wiring!");
-        return "";
+    // get 3 similar (within 2%) consecutive results for rel_humidity
+    int similarCount = 0;
+    int tries = 0;
+    int maxTries = 10;
+    long lastPressure = -1;
+
+    while(tries++ < maxTries) {
+        if (bme.begin(BMP_ADDR)) {
+            // Serial.println("Could not find a valid BMP280 sensor, check wiring!");
+            int temp = (int)(bme.readTemperature() * 100); // Centidegree celsius
+            long pressure = (long) bme.readPressure(); // Pa
+            if (lastPressure < 0) {
+                lastPressure = pressure;
+            } else {
+                if (withinMarging(lastPressure, pressure, 2)) {
+                    similarCount++;
+                    if (similarCount == 3) {
+                        return ",bmp_1:" + String(temp) + ';' + String(pressure);
+                    }
+                } else {
+                    similarCount = 0;
+                    lastPressure = -1;
+                }
+            }
+            delay(100);
+        } else {
+            delay(500);
+        }
     }
 
     int temp = (int)(bme.readTemperature() * 100); // Centidegree celsius
@@ -198,17 +230,38 @@ String getBMPReqContent() {
 
 String getRainReqContent() {
     digitalWrite(RELAY_PIN, 1);
+    delay(50);
     int rain = analogRead(RAIN_PIN);
     digitalWrite(RELAY_PIN, 0);
     return ",rain_1:" + String(rain);
 }
 
 String getDHT11ReqContent() {
-    DHT11Res res = readDHT11Retry();
-    if (isResValid(res)) {
-      return ",dht11_4:" + String(res.temp) + ';' + String(res.rel_humidity);
-    } else {
-      softSerial.println("No valid DHT11 result !");
+    // get 3 similar (3%) and consecutive results for rel_humidity
+    int similarCount = 0;
+    int tries = 0;
+    int maxTries = 15;
+    DHT11Res lastRes = {99, 99};
+
+    while(tries++ < maxTries) {
+        DHT11Res currentRes = readDHT11Retry();
+        if (!isResValidDHT11(currentRes)) {
+            return "";
+        }
+        if (!isResValidDHT11(lastRes)) {
+            lastRes = currentRes;
+        } else {
+            if (withinMarging(lastRes.rel_humidity, currentRes.rel_humidity, 3)) {
+                similarCount++;
+                if (similarCount == 3) {
+                    return ",dht11_4:" + String(lastRes.temp) + ';' + String(lastRes.rel_humidity);
+                }
+            } else {
+                similarCount = 0;
+                lastRes = {99, 99};
+            }
+        }
+        delay(1000);
     }
     return "";
 }
@@ -218,20 +271,6 @@ String buildRequestContent() {
         + getRainReqContent() + getBMPReqContent();
 }
 
-void setup() {
-    delay(1000);
-    softSerial.begin(9600);
-    Serial.begin(115200);
-
-    pinMode(GREEN_LED_PIN, OUTPUT);
-    pinMode(RELAY_PIN, OUTPUT);
-    pinMode(RAIN_PIN, INPUT);
-
-    delay(1000);
-    while (!connect()) {}
-    digitalWrite(GREEN_LED_PIN, 1);
-}
-
 bool sendToSensorHub() {
     unsigned long measuredAt = getEpoch();
 
@@ -239,7 +278,7 @@ bool sendToSensorHub() {
     String request = "POST /api/records HTTP/1.1\r\nHost: " + serverIp + "\r\nContent-Type: text/plain\r\nContent-Length: " + content.length() + "\r\n\r\n" + content +"\r\n\r\n";
 
     if (!execOnESP("AT+CIPSTART=\"TCP\",\"" + serverIp + "\"," + serverPort, "OK", 5000))
-        return false;
+    return false;
 
     int reqLength = request.length() + 2; // add 2 because \r\n will be appended by SoftwareSerial.println().
     if (!execOnESP("AT+CIPSEND=" + String(reqLength) , "OK", 10000)) {
@@ -255,6 +294,20 @@ bool sendToSensorHub() {
     execOnESP("AT+CIPCLOSE", "OK" , 2000);
 
     return true;
+}
+
+void setup() {
+    delay(1000);
+    softSerial.begin(9600);
+    Serial.begin(115200);
+
+    pinMode(GREEN_LED_PIN, OUTPUT);
+    pinMode(RELAY_PIN, OUTPUT);
+    pinMode(RAIN_PIN, INPUT);
+
+    delay(1000);
+    while (!connect()) {}
+    digitalWrite(GREEN_LED_PIN, 1);
 }
 
 void loop() {

@@ -209,15 +209,7 @@ def get_lastest_records():
     }}), 200
 
 
-@app.route('/api/records/<since_epoch_sec>', methods=['GET'])
-def get_records_history(since_epoch_sec):
-    if not app.config['WEATHER_MODE']:
-        return jsonify({'history': {
-            'soil_humidity': get_soil_humidity_history(since_epoch_sec),
-            'dht11': get_dht11_history(since_epoch_sec),
-            'photocell': get_photocell_history(since_epoch_sec)
-            }}), 200
-
+def get_records_history_weather(since_epoch_sec):
     combined = {
         'dht11': [],
         'bmp': []
@@ -236,6 +228,18 @@ def get_records_history(since_epoch_sec):
         'rain': get_rain_history_weather(since_epoch_sec),
         'bmp': get_bmp_history_weather(since_epoch_sec),
     }}), 200
+
+
+@app.route('/api/records/<since_epoch_sec>', methods=['GET'])
+def get_records_history(since_epoch_sec):
+    if app.config['WEATHER_MODE']:
+        return get_records_history_weather(since_epoch_sec)
+
+    return jsonify({'history': {
+        'soil_humidity': get_soil_humidity_history(since_epoch_sec),
+        'dht11': get_dht11_history(since_epoch_sec),
+        'photocell': get_photocell_history(since_epoch_sec)
+        }}), 200
 
 
 @app.route('/api/records', methods=['POST'])
@@ -264,6 +268,9 @@ def add_record():
 
 @app.route('/')
 def index():
+    if not app.config['DEBUG']:
+        return __bad_request()
+
     if app.config['WEATHER_MODE']:
         return send_from_directory('public/weather', 'index.html')
     return send_from_directory('public', 'index.html')
@@ -271,6 +278,9 @@ def index():
 
 @app.route('/<path:path>')
 def static_files(path):
+    if not app.config['DEBUG']:
+        return __bad_request()
+
     if '.' not in path:
         return index()
 

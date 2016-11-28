@@ -25,14 +25,19 @@
             <h2>{{records.rain[0].value / 1024 * 100}} % probality of recent rain</h2>
         </div>
     </div>
-    <div class="graph-container">
-        <linechart data="data_history.combined" options="options['combined']"></linechart>
+    <div ng-if="!data_history">
+        <p>Loading data</p>
     </div>
+    <div ng-if="data_history">
+        <div class="graph-container">
+            <linechart data="data_history.combined" options="options['combined']"></linechart>
+        </div>
 
-    <div class="graph-container">
-        <linechart data="data_history" options="options['bmp_pressure']"></linechart>
-    </div>
-    <div class="graph-container">
-        <linechart data="data_history" options="options['rain']"></linechart>
+        <div class="graph-container">
+            <linechart data="data_history" options="options['bmp_pressure']"></linechart>
+        </div>
+        <div class="graph-container">
+            <linechart data="data_history" options="options['rain']"></linechart>
+        </div>
     </div>
 </div>
