@@ -23,6 +23,10 @@ def __bad_request():
     return 'not good', 400
 
 
+def __forbidden():
+    return 'not the good token', 403
+
+
 def __to_pub_list(elements):
     return list(map(lambda e: e.as_pub_dict(), elements))
 
@@ -245,7 +249,14 @@ def get_records_history(since_epoch_sec):
 @app.route('/api/records', methods=['POST'])
 def add_record():
     try:
-        for timestamp_line in request.data.decode('utf-8').split('\n'):
+        lines = request.data.decode('utf-8').split('\n')
+        secret = lines[0]
+        if secret != app.config['IOT_SECRET']:
+            return __forbidden()
+
+        del lines[0:1]
+
+        for timestamp_line in lines:
             pieces = timestamp_line.split(',')
             if len(pieces) < 2:
                 return __bad_request()
