@@ -21,7 +21,7 @@ platform_resolver = {
 }
 
 
-def read_config(config_path):
+def read_config(config_path, gpio_wrapper):
     with open(config_path, 'r') as f:
         yaml_cfg = yaml.load(f.read())
     s = []
@@ -36,7 +36,7 @@ def read_config(config_path):
             repeat_every = [int(i) for i in node['repeat_every'].split(':')]
         s_pins = []
         for p_num in node['pin_ids']:
-            pins[p_num] = Pin(p_num)
+            pins[p_num] = Pin(p_num, gpio_wrapper)
             s_pins.append(p_num)
         s.append(
             Schedule(s_pins, start_at, run_for, repeat_every))
@@ -67,7 +67,7 @@ def main(env, platform, relay_config_path='config/default.yaml'):
     GPIO = platform_resolver[platform]
 
     # Read schedules and pins from config
-    schedules, pins = read_config(relay_config_path)
+    schedules, pins = read_config(relay_config_path, GPIO)
 
     for pin in pins.values():
         pin.setup()
