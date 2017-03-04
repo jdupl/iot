@@ -9,69 +9,16 @@ from multiprocessing.managers import SyncManager
 import relays_api
 import scheduler
 from scheduler import Schedule
+from gpio import Pin, OPiGPIOWrapper, RPiGPIOWrapper, GPIOPrintWrapper
 
 child_processes = []
 flask_app = None
 
-
-class FakeGPIO():
-
-    BCM = 'bcm'
-    OUT = 'out'
-
-    def setwarnings(*args, **kwargs):
-        pass
-
-    def setmode(*args, **kwargs):
-        pass
-
-    def setup(*args, **kwargs):
-        pass
-
-    def output(*args, **kwargs):
-        pass
-
-    def cleanup(*args, **kwargs):
-        pass
-
-
-class Pin():
-    def __init__(self, bcm_pin_num, user_override=False):
-        self.bcm_pin_num = bcm_pin_num
-        self.state_str = 'off'
-        self.on_user_override = user_override
-
-    def __eq__(self, o):
-        return self.bcm_pin_num == o.bcm_pin_num and \
-            self.state_str == o.state_str
-
-    def apply_state(self, state_str):
-        # 'on' is 0 on normally closed relay
-        gpio_val = 1 if state_str == 'off' else 0
-        try:
-            GPIO.output(self.bcm_pin_num, gpio_val)
-
-            self.state_str = state_str
-            print('Pin %d is now %s (%d)' % (self.bcm_pin_num,
-                                             state_str, gpio_val))
-        except Exception as e:
-            print('Problem while changing pin %d status: '
-                  % self.bcm_pin_num, e)
-
-    def set_user_override(self, state_str):
-        self.on_user_override = True
-        self.apply_state(state_str)
-
-    def reset_user_override(self):
-        # TODO trigger control relay routine
-        self.on_user_override = False
-
-    def as_pub_dict(self):
-        return {
-            'bcm_pin_num': self.bcm_pin_num,
-            'state_str': self.state_str,
-            'on_user_override': self.on_user_override
-        }
+platform_resolver = {
+    'computer': GPIOPrintWrapper,
+    'opi': OPiGPIOWrapper,
+    'rpi': RPiGPIOWrapper
+}
 
 
 def read_config(config_path):
@@ -88,7 +35,7 @@ def read_config(config_path):
         if 'repeat_every' in node:
             repeat_every = [int(i) for i in node['repeat_every'].split(':')]
         s_pins = []
-        for p_num in node['gpio_bcm_pins']:
+        for p_num in node['pin_ids']:
             pins[p_num] = Pin(p_num)
             s_pins.append(p_num)
         s.append(
@@ -112,21 +59,18 @@ def launch_api(flask_app):
                   host=flask_app.config['HOST'])
 
 
-def main(env=None, relay_config_path='config/default.yaml'):
+def main(env, platform, relay_config_path='config/default.yaml'):
     global child_processes, flask_app, manager, GPIO
     atexit.register(interrupt)
 
-    # Setup schedules and pins
+    # Get the GPIO wrapper for the platform
+    GPIO = platform_resolver[platform]
+
+    # Read schedules and pins from config
     schedules, pins = read_config(relay_config_path)
 
-    GPIO = FakeGPIO
-    if env != 'dev' and env != 'test':
-        import RPi.GPIO as _GPIO
-        GPIO = _GPIO
-        GPIO.setwarnings(False)
-        GPIO.setmode(GPIO.BCM)
-        for pin in pins.values():
-            GPIO.setup(pin.bcm_pin_num, GPIO.OUT, initial=1)
+    for pin in pins.values():
+        pin.setup()
 
     # Setup var manager
     manager = SyncManager(address=('127.0.0.1', 5001))
@@ -141,11 +85,13 @@ def main(env=None, relay_config_path='config/default.yaml'):
         synced_pins[k] = v
 
     # Setup scheduler process
-    relays_updater_process = Process(target=start_scheduler,
-                                     args=(synced_schedules, synced_pins,
-                                           GPIO,))
+    relays_updater_process = Process(
+        target=start_scheduler,
+        args=(synced_schedules, synced_pins, GPIO,))
+
     child_processes.append(relays_updater_process)
     relays_updater_process.start()
+
     # Let schedule run once
     sleep(0.5)
 
@@ -162,5 +108,6 @@ def main(env=None, relay_config_path='config/default.yaml'):
 
 if __name__ == '__main__':
     env = sys.argv[1] if len(sys.argv) > 1 else 'default'
+    platform = sys.argv[2] if len(sys.argv) > 2 else 'computer'
     config_path = 'config/%s.yaml' % env
-    main(env, config_path)
+    main(env, platform, config_path)
