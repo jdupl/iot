@@ -13,6 +13,7 @@ from gpio import Pin, OPiGPIOWrapper, RPiGPIOWrapper, GPIOPrintWrapper
 
 child_processes = []
 flask_app = None
+manager = None
 
 platform_resolver = {
     'computer': GPIOPrintWrapper,
@@ -45,7 +46,8 @@ def read_config(config_path, gpio_wrapper):
 
 def interrupt():
     global child_processes, manager
-    manager.shutdown()
+    if manager:
+        manager.shutdown()
     for p in child_processes:
         p.terminate()
 
@@ -101,7 +103,6 @@ def main(env, platform, relay_config_path='config/default.yaml'):
                                 args=(flask_app,))
     child_processes.append(relay_api_process)
     relay_api_process.start()
-
     if env != 'test':
         relays_updater_process.join()
 

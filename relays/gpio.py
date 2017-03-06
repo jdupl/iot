@@ -3,7 +3,7 @@ class Pin():
         self.pin_id = pin_id
         self.state_str = 'off'
         self.on_user_override = user_override
-        self.GPIO = gpio_wrapper
+        self.GPIO = gpio_wrapper()
 
     def __eq__(self, o):
         return self.pin_id == o.pin_id and \

@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, request
+from flask import Flask, request, jsonify, send_from_directory
+
 
 app = Flask(__name__)
 
@@ -23,11 +24,10 @@ def get_relays():
 
 @app.route('/api/relays/<pin_id>', methods=['POST'])
 def put_relays(pin_id):
-    pin_id = int(pin_id)
-    data = request.form
-    p = synced_pins[pin_id]
+    data = request.get_json()
+    p = synced_pins[int(pin_id)]
 
-    wanted_state = data['state_str']
+    wanted_state = data.get('state_str')
     reset_to_auto = wanted_state == 'auto'
 
     if reset_to_auto:
@@ -37,8 +37,17 @@ def put_relays(pin_id):
 
     # Share to other processes
     synced_pins[pin_id] = p
-
     return jsonify({'relay': synced_pins[pin_id].as_pub_dict()}), 200
+
+
+@app.route('/')
+def index():
+    return send_from_directory('public', 'index.html')
+
+
+@app.route('/<path:path>')
+def static_files(path):
+    return send_from_directory('public', path)
 
 
 def setup(env, _synced_schedules, _synced_pins):
