@@ -80,9 +80,9 @@ class OPiGPIOWrapper(AbstractPhysicalGPIO):
         self.connector = _connector
 
     def setup(self, pin_id, gpio_value_init):
-        addr = self.__get_addr_from_phy(pin_id)
-        self.GPIO.setcfg(addr, self.GPIO.OUTPUT)
-        self.GPIO.output(addr, gpio_value_init)
+        self.pin_id = self.__get_addr_from_phy(pin_id)
+        self.GPIO.setcfg(self.pin_id, self.GPIO.OUTPUT)
+        self.GPIO.output(self.pin_id, gpio_value_init)
 
     def __get_addr_from_phy(self, pin_id):
         try:
@@ -91,21 +91,9 @@ class OPiGPIOWrapper(AbstractPhysicalGPIO):
         except Exception as e:
             print(e)
 
-    def apply_state(self, state_str):
-        # 'on' is 0 on for a normally closed relay
-        gpio_val = 1 if state_str == 'off' else 0
+    def cleanup(self):
+        pass
 
-        try:
-            addr = self.__get_addr_from_phy(self.pin_id)
-
-            self.GPIO.output(addr, gpio_val)
-            self.state_str = state_str
-
-            print('Pin %d at address %s is now %s (%d)' % (
-                self.pin_id, addr, state_str, gpio_val))
-        except Exception as e:
-            print('Problem while changing pin %d status: '
-                  % self.pin_id, e)
 
 
 class GPIOPrintWrapper():
