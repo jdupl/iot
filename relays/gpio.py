@@ -73,8 +73,8 @@ class OPiGPIOWrapper(AbstractPhysicalGPIO):
     # Implementation for Orange pi one
     # Pin ID are physical numbering
     def __init__(self):
-        from pyA20 import gpio as _GPIO
-        from pyA20 import connector as _connector
+        from pyA20.gpio import gpio as _GPIO
+        from pyA20.gpio import connector as _connector
 
         self.GPIO = _GPIO
         self.connector = _connector
