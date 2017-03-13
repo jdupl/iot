@@ -35,7 +35,7 @@ def put_relays(pin_id):
     if reset_to_auto:
         p.reset_user_override()
     else:
-        gpio_wrapper.set_user_override(wanted_state)
+        gpio_wrapper.set_user_override(p, wanted_state)
 
     # Share to other processes
     synced_pins[pin_id] = p
