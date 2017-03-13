@@ -23,11 +23,12 @@ def get_relays():
 
 
 @app.route('/api/relays/<pin_id>', methods=['POST'])
-def put_relays(pin_id):
+def put_relays(p_id):
     global gpio_wrapper
+    pin_id = int(p_id)
 
     data = request.get_json()
-    p = synced_pins[int(pin_id)]
+    p = synced_pins[pin_id]
 
     wanted_state = data.get('state_str')
     reset_to_auto = wanted_state == 'auto'
@@ -38,8 +39,9 @@ def put_relays(pin_id):
         gpio_wrapper.set_user_override(p, wanted_state)
 
     # Share to other processes
-    synced_pins[int(pin_id)] = p
-    return jsonify({'relay': synced_pins[int(pin_id)].as_pub_dict()}), 200
+    synced_pins[pin_id] = p
+    print(synced_pins)
+    return jsonify({'relay': synced_pins[pin_id].as_pub_dict()}), 200
 
 
 @app.route('/')
