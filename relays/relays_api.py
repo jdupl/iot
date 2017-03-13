@@ -38,8 +38,8 @@ def put_relays(pin_id):
         gpio_wrapper.set_user_override(p, wanted_state)
 
     # Share to other processes
-    synced_pins[pin_id] = p
-    return jsonify({'relay': synced_pins[pin_id].as_pub_dict()}), 200
+    synced_pins[int(pin_id)] = p
+    return jsonify({'relay': synced_pins[int(pin_id)].as_pub_dict()}), 200
 
 
 @app.route('/')
