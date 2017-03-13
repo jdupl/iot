@@ -37,10 +37,10 @@ def put_relays(p_id):
         p.reset_user_override()
     else:
         gpio_wrapper.set_user_override(p, wanted_state)
+        p.state_str = wanted_state
 
     # Share to other processes
     synced_pins[pin_id] = p
-    print(synced_pins)
     return jsonify({'relay': synced_pins[pin_id].as_pub_dict()}), 200
 
 
