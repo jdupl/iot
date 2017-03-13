@@ -7,7 +7,7 @@ GPIO = None
 
 def start(schedules, synced_pins, _GPIO):
     global GPIO
-    GPIO = _GPIO
+    GPIO = _GPIO()
 
     try:
         control_relays(schedules, synced_pins)
@@ -33,7 +33,7 @@ def update_pins_on_auto(pin_nums, state_str, synced_pins):
             print('Pin %d is on user_override. Keeping current state.'
                   % pin.pin_id)
         else:
-            pin.apply_state(state_str)
+            GPIO.apply_state(pin_num, state_str)
         synced_pins[pin_num] = pin
 
 

@@ -84,6 +84,7 @@ def main(env, platform, relay_config_path='config/default.yaml'):
     for s in schedules:
         synced_schedules.append(s)
     for k, v in pins.items():
+        print(v)
         synced_pins[k] = v
 
     # Setup scheduler process
