@@ -33,7 +33,7 @@ def put_relays(pin_id):
     if reset_to_auto:
         p.reset_user_override()
     else:
-        p.set_user_override(wanted_state)
+        gpio_wrapper.set_user_override(wanted_state)
 
     # Share to other processes
     synced_pins[pin_id] = p
@@ -50,8 +50,8 @@ def static_files(path):
     return send_from_directory('public', path)
 
 
-def setup(env, _synced_schedules, _synced_pins):
-    global synced_pins, synced_schedules
+def setup(env, _synced_schedules, _synced_pins, gpio_wrapper):
+    global synced_pins, synced_schedules, gpio_wrapper
     synced_pins = _synced_pins
     synced_schedules = _synced_schedules
 

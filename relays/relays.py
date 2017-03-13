@@ -100,7 +100,8 @@ def main(env, platform, relay_config_path='config/default.yaml'):
     sleep(0.5)
 
     # Setup Flask process
-    flask_app = relays_api.setup(env, synced_schedules, synced_pins)
+    flask_app = relays_api.setup(env, synced_schedules, synced_pins,
+                                 gpio_wrapper)
     relay_api_process = Process(target=launch_api,
                                 args=(flask_app,))
     child_processes.append(relay_api_process)
