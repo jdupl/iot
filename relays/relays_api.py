@@ -24,6 +24,8 @@ def get_relays():
 
 @app.route('/api/relays/<pin_id>', methods=['POST'])
 def put_relays(pin_id):
+    global gpio_wrapper
+
     data = request.get_json()
     p = synced_pins[int(pin_id)]
 
@@ -50,8 +52,9 @@ def static_files(path):
     return send_from_directory('public', path)
 
 
-def setup(env, _synced_schedules, _synced_pins, gpio_wrapper):
+def setup(env, _synced_schedules, _synced_pins, _gpio_wrapper):
     global synced_pins, synced_schedules, gpio_wrapper
+    gpio_wrapper = _gpio_wrapper
     synced_pins = _synced_pins
     synced_schedules = _synced_schedules
 
