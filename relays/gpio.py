@@ -81,7 +81,8 @@ class OPiGPIOWrapper(AbstractPhysicalGPIO):
         # 'on' is 0 on for a normally closed relay
         gpio_val = 0 if state_str == 'off' else 1
         try:
-            self.GPIO.output(pin_id, gpio_val)
+            addr = self.__get_addr_from_phy(pin_id)
+            self.GPIO.output(addr, gpio_val)
 
             self.state_str = state_str
             print('Pin %d is now %s (%d)' % (pin_id,
