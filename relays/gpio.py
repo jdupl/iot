@@ -3,14 +3,10 @@ class Pin():
         self.pin_id = pin_id
         self.state_str = 'off'
         self.on_user_override = user_override
-        self.GPIO = gpio_wrapper()
 
     def __eq__(self, o):
         return self.pin_id == o.pin_id and \
             self.state_str == o.state_str
-
-    def setup(self):
-        self.GPIO.setup(self.pin_id, 1)
 
     def reset_user_override(self):
         # TODO trigger control relay routine

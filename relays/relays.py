@@ -71,8 +71,9 @@ def main(env, platform, relay_config_path='config/default.yaml'):
     # Read schedules and pins from config
     schedules, pins = read_config(relay_config_path, GPIO)
 
+    gpio_wrapper = GPIO()
     for pin in pins.values():
-        pin.setup()
+        gpio_wrapper.setup(pin.pin_id, 1)
 
     # Setup var manager
     manager = SyncManager(address=('127.0.0.1', 5001))
