@@ -22,7 +22,7 @@ def get_relays():
     return jsonify({'relays': __to_pub_list(pins)}), 200
 
 
-@app.route('/api/relays/<pin_id>', methods=['POST'])
+@app.route('/api/relays/<p_id>', methods=['POST'])
 def put_relays(p_id):
     global gpio_wrapper
     pin_id = int(p_id)
