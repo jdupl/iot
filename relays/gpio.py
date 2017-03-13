@@ -79,7 +79,7 @@ class OPiGPIOWrapper(AbstractPhysicalGPIO):
 
     def apply_state(self, pin_id, state_str):
         # 'on' is 0 on for a normally closed relay
-        gpio_val = 1 if state_str == 'off' else 0
+        gpio_val = 0 if state_str == 'off' else 1
         try:
             self.GPIO.output(pin_id, gpio_val)
 
