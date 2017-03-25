@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
 import sys
-import requests
 
 from flask import Flask, request, jsonify, send_from_directory
 from sqlalchemy import func
 
 # Own modules
 import analytics
+import models
 
 from database import db_session, init_db
-import models
 from models import HygroRecord, DHT11Record, PhotocellRecord, BMPRecord, \
     RainRecord
-
-POOL_TIME = 5  # Seconds
-relays = []
 
 app = Flask(__name__)
 
@@ -182,19 +178,6 @@ def get_rain_history_weather(since_epoch_sec):
             'value': r.value
         })
     return history
-
-
-@app.route('/api/relays', methods=['GET'])
-def get_relays():
-    r = requests.get('%s/api/relays' % app.config['RELAYS_HOST'])
-    return jsonify(r.json()), 200
-
-
-@app.route('/api/relays/<id>', methods=['POST'])
-def put_relays(id):
-    r = requests.post('%s/api/relays/%s' % (app.config['RELAYS_HOST'], id),
-                      data=request.json)
-    return jsonify(r.json()), 200
 
 
 @app.route('/api/records/latest', methods=['GET'])

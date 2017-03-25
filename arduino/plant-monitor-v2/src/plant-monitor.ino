@@ -2,7 +2,7 @@
 #include <Wire.h>
 
 // RX, TX
-SoftwareSerial softSerial(10, 11);
+SoftwareSerial softSerial(11, 12);
 
 const String SSID = "changeme"; // wifi_ssid
 const String password = "changeme"; // wifi_password
@@ -15,9 +15,10 @@ const String serverPort = "changeme"; // sensor_hub_port
 const unsigned long updateDelay = changeme; // update_delay
 
 const String uuid = "changeme"; // arduino_uuid
-const String hygrometerPin = "changeme"; // analog_pins_hygrometer
+const int hygrometerPin = changeme; // analog_pins_hygrometer
 
 const int RELAY_PIN = changeme; // digital_pins_relay
+const int RED_LED_PIN = changeme; // digital_pins_red_led
 
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
@@ -47,7 +48,7 @@ bool poolNTP(unsigned long timeout) {
     bool inResPacket = false;
     char c = ' ';
 
-    while (millis() < tExpire && i < NTP_PACKET_SIZE) {
+    while (millis() < tExpire && i <= NTP_PACKET_SIZE) {
         c = Serial.read();
         if (inResPacket && c != -1) {
             packetBuffer[i++] = c;
@@ -55,6 +56,7 @@ bool poolNTP(unsigned long timeout) {
             inResPacket = true;
         }
     }
+    softSerial.println(i);
     return i == NTP_PACKET_SIZE;
 }
 
@@ -106,20 +108,9 @@ bool connectWifi() {
 }
 
 void resetESP() {
-    // Everything is broken so turn off leds
-    digitalWrite(GREEN_LED_PIN, 0);
-
     delay(2000);
     execOnESP("AT+RST", "ready", 20000);
     delay(1000);
-
-    if (connectWifi()) {
-
-        if (epochInit != 0) {
-            // Epoch is set
-            digitalWrite(GREEN_LED_PIN, 1);
-        }
-    }
 }
 
 unsigned long getEpoch() {
@@ -154,20 +145,26 @@ bool connect() {
 }
 
 String getHygrometerReqContent() {
-    String content = "";
     // Close sensors circuit
-    digitalWrite(RELAY_PIN, 0);
-    delay(100);
-    String id = "hygro_" + (String) hygrometerPin;
-    content += ',' + id + ':' + String(analogRead(hygrometerPin));
-    // Open sensors circuit
     digitalWrite(RELAY_PIN, 1);
+    delay(100);
 
-    return content;
+    String id = "hygro_" + (String) hygrometerPin;
+    int value = analogRead(hygrometerPin);
+
+    if (value >= 900) {
+        digitalWrite(RED_LED_PIN, 1);
+    } else {
+        digitalWrite(RED_LED_PIN, 0);
+    }
+    // Open sensors circuit
+    digitalWrite(RELAY_PIN, 0);
+
+    return ',' + id + ':' + String(value);
 }
 
 String buildRequestContent() {
-    return (iotSecret + "\n" + (String) getEpoch()) + ',' + uuid +  getHygrometer();
+    return (iotSecret + "\n" + (String) getEpoch()) + ',' + uuid +  getHygrometerReqContent();
 }
 
 bool sendToSensorHub() {
@@ -202,6 +199,8 @@ void setup() {
 
     pinMode(RED_LED_PIN, OUTPUT);
     pinMode(RELAY_PIN, OUTPUT);
+    digitalWrite(RELAY_PIN, 0);
+    digitalWrite(RED_LED_PIN, 0);
 
     delay(1000);
     while (!connect()) {}

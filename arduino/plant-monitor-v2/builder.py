@@ -57,7 +57,7 @@ if __name__ == '__main__':
         config_name = sys.argv[1]
 
     print('Using config name "%s"' % config_name)
-    src = load_src('src/weather.ino')
+    src = load_src('src/plant-monitor.ino')
     config = load_cfg('config/%s.yaml' % config_name)
 
     for k, v in config.items():
@@ -66,6 +66,6 @@ if __name__ == '__main__':
             print('failed !', k, v)
             exit(1)
 
-    with open('_build/weather.ino', 'w') as f:
+    with open('_build/plant-monitor.ino', 'w') as f:
         f.writelines(src)
     subprocess.check_call(['make', 'upload'], cwd='_build')

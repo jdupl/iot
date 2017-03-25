@@ -13,6 +13,7 @@ const String serverIp = "changeme"; // sensor_hub_ip
 const String serverPort = "changeme"; // sensor_hub_port
 
 const String uuid = "changeme"; // arduino_uuid
+const String iotSecret = "changeme"; // iot_secret
 
 const unsigned long updateDelay = changeme; // update_delay
 const int hygrometerPins[] = {changeme}; // hygrometer_pins
@@ -189,7 +190,8 @@ String getHygrometerReqContent() {
 }
 
 String buildRequestContent() {
-    String content =  ((String) getEpoch());
+    String content = iotSecret + "\n";
+    content += ((String) getEpoch());
     content += ',' + uuid;
     content += getDHT11ReqContent();
     content += getHygrometerReqContent();

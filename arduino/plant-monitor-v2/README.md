@@ -2,6 +2,9 @@
 
 Collects data from sensors and sends measurements with NTP timestamp to an external server.
 
+## Version 2
+
+Connects to ESP through hardware Serial
 
 ## Usage
 
