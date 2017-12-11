@@ -1,25 +1,3 @@
-class Pin():
-    def __init__(self, pin_id, gpio_wrapper, user_override=False):
-        self.pin_id = pin_id
-        self.state_str = 'off'
-        self.on_user_override = user_override
-
-    def __eq__(self, o):
-        return self.pin_id == o.pin_id and \
-            self.state_str == o.state_str
-
-    def reset_user_override(self):
-        # TODO trigger control relay routine
-        self.on_user_override = False
-
-    def as_pub_dict(self):
-        return {
-            'pin_id': self.pin_id,
-            'state_str': self.state_str,
-            'on_user_override': self.on_user_override
-        }
-
-
 class AbstractPhysicalGPIO():
 
     def setup(self, pin_id, gpio_value_init):

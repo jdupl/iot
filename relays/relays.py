@@ -8,12 +8,14 @@ from multiprocessing.managers import SyncManager
 
 import relays_api
 import scheduler
-from scheduler import Schedule
-from gpio import Pin, OPiGPIOWrapper, RPiGPIOWrapper, GPIOPrintWrapper
+from models import Schedule, Pin
+from gpio import OPiGPIOWrapper, RPiGPIOWrapper, GPIOPrintWrapper
+from flask_sqlalchemy import SQLAlchemy
 
 child_processes = []
 flask_app = None
 manager = None
+db = None
 
 platform_resolver = {
     'computer': GPIOPrintWrapper,
@@ -22,7 +24,7 @@ platform_resolver = {
 }
 
 
-def read_config(config_path, gpio_wrapper):
+def read_config(config_path):
     with open(config_path, 'r') as f:
         yaml_cfg = yaml.load(f.read())
     s = []
@@ -35,9 +37,10 @@ def read_config(config_path, gpio_wrapper):
 
         if 'repeat_every' in node:
             repeat_every = [int(i) for i in node['repeat_every'].split(':')]
+
         s_pins = []
         for p_num in node['pin_ids']:
-            pins[p_num] = Pin(p_num, gpio_wrapper)
+            pins[p_num] = Pin(p_num)
             s_pins.append(p_num)
         s.append(
             Schedule(s_pins, start_at, run_for, repeat_every))
@@ -62,14 +65,17 @@ def launch_api(flask_app):
 
 
 def main(env, platform, relay_config_path='config/default.yaml'):
-    global child_processes, flask_app, manager, GPIO
+    global child_processes, flask_app, manager, GPIO, db
     atexit.register(interrupt)
+
+    db = SQLAlchemy(flask_app)
 
     # Get the GPIO wrapper for the platform
     GPIO = platform_resolver[platform]
 
+
     # Read schedules and pins from config
-    schedules, pins = read_config(relay_config_path, GPIO)
+    schedules, pins = read_config(relay_config_path)
 
     gpio_wrapper = GPIO()
     for pin in pins.values():
