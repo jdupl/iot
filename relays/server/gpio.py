@@ -1,7 +1,11 @@
 class AbstractPhysicalGPIO():
 
+    setup_pins = []  # store pins that are already setup
+
     def setup(self, pin_id, gpio_value_init):
-        raise Exception('Abstract method')
+        if pin_id not in self.setup_pins:
+            self.setup_pins.append(pin_id)
+            self._setup(pin_id, gpio_value_init)
 
     def output(self, pin_id, gpio_value):
         self.GPIO.output(pin_id, gpio_value)
@@ -29,7 +33,7 @@ class RPiGPIOWrapper(AbstractPhysicalGPIO):
         self.GPIO.setwarnings(False)
         self.GPIO.setmode(_GPIO.BCM)
 
-    def setup(self, pin_id, gpio_value_init):
+    def _setup(self, pin_id, gpio_value_init):
         self.GPIO.setup(pin_id, self.GPIO.OUT, initial=gpio_value_init)
 
     def cleanup(self):
@@ -47,7 +51,7 @@ class OPiGPIOWrapper(AbstractPhysicalGPIO):
         self.GPIO.init()
         self.connector = _connector
 
-    def setup(self, pin_id, gpio_value_init):
+    def _setup(self, pin_id, gpio_value_init):
         self.pin_id = self.__get_addr_from_phy(pin_id)
         self.GPIO.setcfg(self.pin_id, self.GPIO.OUTPUT)
         self.GPIO.output(self.pin_id, gpio_value_init)
@@ -81,7 +85,7 @@ class OPiGPIOWrapper(AbstractPhysicalGPIO):
 
 class GPIOPrintWrapper(AbstractPhysicalGPIO):
 
-    def setup(self, pin_id, gpio_value_init):
+    def _setup(self, pin_id, gpio_value_init):
         print('Setting pin %d as output with value %s'
               % (pin_id, gpio_value_init))
 
