@@ -15,6 +15,7 @@ from server.models import Pin, Schedule
 
 global child_processes, GPIO
 child_processes = []
+
 migrate = Migrate(app, db)
 manager = Manager(app)
 
@@ -90,7 +91,7 @@ def create_data():
     p.schedule_id = lights.id
     db.session.add(p)
 
-    p = Pin(pin_id=26, name='Ventilation')
+    p = Pin(pin_id=36, name='Ventilation')
     p.schedule_id = fans.id
     db.session.add(p)
 

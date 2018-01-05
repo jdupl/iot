@@ -1,6 +1,0 @@
--
-  name: Microgreens lights
-  pin_ids: [37, 35, 33, 31, 13]
-  start_at: '5:0:0'
-  run_for: '19:0:0'
-  uuid: 1
