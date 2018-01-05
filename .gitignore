@@ -74,3 +74,4 @@ sensor-hub/config/my*.py
 # User configs
 **my*.yaml
 venv/
+server/config/api/dev.sqlite

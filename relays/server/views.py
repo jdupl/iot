@@ -24,7 +24,7 @@ def put_relays(pin_id):
     reset_to_auto = wanted_state == 'auto'
 
     # p = synced_pins[int(pin_id)]
-    p = Pin.query.filter(Pin.pin_id is int(pin_id)).one()
+    p = Pin.query.filter(Pin.pin_id == int(pin_id)).one()
 
     if reset_to_auto:
         p.reset_user_override()

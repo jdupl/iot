@@ -89,5 +89,5 @@ class GPIOPrintWrapper(AbstractPhysicalGPIO):
         print('Setting pin %d as output with value %s'
               % (pin_id, gpio_value_init))
 
-    def output(self, pin_id, gpio_value):
+    def apply_state(self, pin_id, gpio_value):
         print('Setting pin %d as value %s' % (pin_id, gpio_value))

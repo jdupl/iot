@@ -75,6 +75,7 @@ def start(_GPIO, _db, _Schedule, _Pin):
     Pin = _Pin
 
     try:
+        print('Starting scheduler process')
         control_relays()
     except KeyboardInterrupt:
         print('Got KeyboardInterrupt.')
@@ -96,7 +97,7 @@ def control_relays():
             pins_dict[pin.pin_id] = pin
 
         control_and_sleep(schedules, pins_dict)
-        sleep(1)  # Overflow next schedule
+        # sleep(1)  # Overflow next schedule
 
 
 def update_pins_on_auto(pins, state_str, pins_dict):

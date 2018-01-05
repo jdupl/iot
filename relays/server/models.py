@@ -29,12 +29,12 @@ class Schedule(db.Model):
         open_m = math.floor(self.open_time_sec % 3600 / 60)
         open_s = math.floor(self.open_time_sec % 60)
         self.first_open = dt.time(hour=open_h, minute=open_m, second=open_s)
-        print(self.first_open)
         self.run_for = dt.timedelta(seconds=self.run_for_sec)
         t = self.first_open
 
         if self.repeat_every:
-            repeat_every = tuple_to_timedelta(self.repeat_every)
+            # repeat_every = tuple_to_timedelta(self.repeat_every)
+            repeat_every = dt.timedelta(seconds=self.repeat_every)
         else:
             self.open_events.append(t)
             self.close_events.append(add_delta_to_rel_time(t, self.run_for))
@@ -82,14 +82,16 @@ class Pin(db.Model):
 
     id = Column(Integer, primary_key=True)
     pin_id = Column(Integer)
+    user_name = Column(String)
     on_user_override = Column(Boolean)
     state_str = Column(String)
 
     schedule_id = Column(Integer, ForeignKey('schedules.id'))
     schedule = relationship('Schedule', back_populates='pins')
 
-    def __init__(self, pin_id, user_override=False):
+    def __init__(self, pin_id, name=None, user_override=False):
         self.pin_id = pin_id
+        self.user_name = name
         self.state_str = 'off'
         self.on_user_override = user_override
 
@@ -105,6 +107,7 @@ class Pin(db.Model):
         return {
             'id': self.id,
             'pin_id': self.pin_id,
+            'name': self.user_name,
             'state_str': self.state_str,
             'on_user_override': self.on_user_override
         }
