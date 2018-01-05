@@ -19,9 +19,9 @@ class AbstractPhysicalGPIO():
     def apply_state(self, pin_id, state_str):
         pass
 
-    def set_user_override(self, state_str):
-        self.on_user_override = True
-        self.apply_state(state_str)
+    # def set_user_override(self, state_str):
+    #     self.on_user_override = True
+    #     self.apply_state(state_str)
 
 
 class RPiGPIOWrapper(AbstractPhysicalGPIO):

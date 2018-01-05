@@ -110,6 +110,7 @@ def update_pins_on_auto(pins, state_str, pins_dict):
             pin.state_str = state_str
             db.session.add(pin)
             db.session.commit()
+            db.session.flush()
 
 
 def control_and_sleep(schedules, synced_pins):

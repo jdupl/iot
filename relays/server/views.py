@@ -31,9 +31,11 @@ def put_relays(pin_id):
     else:
         p.set_user_override(wanted_state)
     db.session.add(p)
+    db.session.commit()
+    db.session.flush()
 
-    p = Pin.query.filter(Pin.pin_id is int(pin_id)).one()
-    # Share to other processes
+    p = Pin.query.filter(Pin.pin_id == int(pin_id)).one()
+
     return jsonify({'relay': p.as_pub_dict()}), 200
 
 

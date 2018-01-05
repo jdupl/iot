@@ -8,7 +8,7 @@ controllers.controller('RelaysController', function($scope, $http, $interval) {
     };
 
     $scope.serverLinkOK = function () {
-      return Date.now() - $scope.lastUpdate < 30000;
+      return Date.now() - $scope.lastUpdate < 5000;
     };
 
     $scope.refresh = function() {
@@ -38,7 +38,7 @@ controllers.controller('RelaysController', function($scope, $http, $interval) {
     $scope.refresh();
     $scope.intervalPromise = $interval(function() {
       $scope.refresh();
-    }, 30000);
+  }, 5000);
     $scope.$on('$destroy', function() {
       $interval.cancel($scope.intervalPromise);
     });

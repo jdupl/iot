@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship
 
 # from database import db_session, Base
 from server import db
-from server.util import time_lt_other, tuple_to_timedelta, add_delta_to_rel_time
+from server.util import time_lt_other, add_delta_to_rel_time
 
 
 class Schedule(db.Model):
@@ -33,7 +33,6 @@ class Schedule(db.Model):
         t = self.first_open
 
         if self.repeat_every:
-            # repeat_every = tuple_to_timedelta(self.repeat_every)
             repeat_every = dt.timedelta(seconds=self.repeat_every)
         else:
             self.open_events.append(t)
@@ -98,6 +97,10 @@ class Pin(db.Model):
     def __eq__(self, o):
         return self.pin_id == o.pin_id and \
             self.state_str == o.state_str
+
+    def set_user_override(self, state_str):
+        self.on_user_override = True
+        self.state_str = state_str
 
     def reset_user_override(self):
         # TODO trigger control relay routine

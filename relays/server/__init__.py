@@ -17,6 +17,5 @@ app.register_blueprint(static_blueprint)
 
 
 def launch_api():
-    print('RUNNING APP')
     app.run(use_reloader=False, port=app.config['PORT'],
             host=app.config['HOST'])
