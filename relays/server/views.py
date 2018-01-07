@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, send_from_directory
 
-from server import db
+from server.database import db_session
 from server.models import Pin
 
 
@@ -30,9 +30,8 @@ def put_relays(pin_id):
         p.reset_user_override()
     else:
         p.set_user_override(wanted_state)
-    db.session.add(p)
-    db.session.commit()
-    db.session.flush()
+    db_session.add(p)
+    db_session.flush()
 
     p = Pin.query.filter(Pin.pin_id == int(pin_id)).one()
 
@@ -41,9 +40,9 @@ def put_relays(pin_id):
 
 @static_blueprint.route('/')
 def index():
-    return send_from_directory('public', 'index.html')
+    return send_from_directory('server/public', 'index.html')
 
 
 @static_blueprint.route('/<path:path>')
 def static_files(path):
-    return send_from_directory('public', path)
+    return send_from_directory('server/public', path)

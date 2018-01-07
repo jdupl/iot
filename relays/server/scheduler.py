@@ -1,7 +1,6 @@
 import datetime as dt
 from time import sleep
-#
-# from relays import db
+
 from server.database import db_session
 
 from server.util import time_to_datetime
