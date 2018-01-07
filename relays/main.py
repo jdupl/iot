@@ -5,7 +5,7 @@ import atexit
 from time import sleep
 from multiprocessing import Process
 from flask import Flask
-from server.database import db_session, init_db, init_engine
+from server.database import init_db
 
 from server.gpio import OPiGPIOWrapper, RPiGPIOWrapper, GPIOPrintWrapper
 from server.models import Pin, Schedule
@@ -53,8 +53,7 @@ if __name__ == '__main__':
     app.config.from_pyfile('server/config/api/default.py')
     app.config.from_pyfile('server/config/api/%s.py' % env, silent=True)
 
-    init_engine(app.config['DATABASE_URI'])
-    init_db()
+    init_db(app.config['DATABASE_URI'])
 
     from server.views import relays_blueprint, static_blueprint
 

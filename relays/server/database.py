@@ -6,18 +6,14 @@ engine = None
 metadata = MetaData()
 
 db_session = scoped_session(
-    lambda: create_session(autocommit=True, autoflush=True, bind=engine))
+    lambda: create_session(bind=engine))
 
 Base = declarative_base()
 Base.query = db_session.query_property()
 
 
-def init_engine(uri):
+def init_db(uri):
     global engine
     engine = create_engine(uri, convert_unicode=True)
+    Base.metadata.create_all(bind=engine)
     return engine
-
-
-def init_db():
-    global engine
-    metadata.create_all(bind=engine)
