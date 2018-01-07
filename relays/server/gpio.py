@@ -13,9 +13,6 @@ class AbstractPhysicalGPIO():
     def cleanup(self):
         pass
 
-    def setup_pin(self, pin_id):
-        pass
-
     def apply_state(self, pin_id, state_str):
         pass
 
@@ -52,18 +49,16 @@ class OPiGPIOWrapper(AbstractPhysicalGPIO):
         self.connector = _connector
 
     def _setup(self, pin_id, gpio_value_init):
-        self.pin_id = self.__get_addr_from_phy(pin_id)
-        self.GPIO.setcfg(self.pin_id, self.GPIO.OUTPUT)
-        self.GPIO.output(self.pin_id, gpio_value_init)
-
-    def setup_pin(self, pin_id):
-        self.GPIO.setup(pin_id, 1)
+        hwr_pin_id = self.__get_addr_from_phy(pin_id)
+        self.GPIO.setcfg(hwr_pin_id, self.GPIO.OUTPUT)
+        self.GPIO.output(hwr_pin_id, gpio_value_init)
 
     def apply_state(self, pin_id, state_str):
         # 'on' is 0 on for a normally closed relay
         gpio_val = 1 if state_str == 'off' else 0
+        hwr_pin_id = self.__get_addr_from_phy(pin_id)
         try:
-            self.GPIO.output(pin_id, gpio_val)
+            self.GPIO.output(hwr_pin_id, gpio_val)
 
             # self.state_str = state_str
             print('Pin %d is now %s (%d)' % (pin_id,
