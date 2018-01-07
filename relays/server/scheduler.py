@@ -2,11 +2,11 @@ import datetime as dt
 from time import sleep
 #
 # from relays import db
+from server.database import db_session
 
 from server.util import time_to_datetime
 
 GPIO = None
-db = None
 Pin = None
 Schedule = None
 
@@ -67,10 +67,9 @@ def _get_latest_event(schedule, times, status):
                 return (today_t, status)
 
 
-def start(_GPIO, _db, _Schedule, _Pin):
-    global GPIO, db, Schedule, Pin
+def start(_GPIO, _Schedule, _Pin):
+    global GPIO, Schedule, Pin
     GPIO = _GPIO()
-    db = _db
     Schedule = _Schedule
     Pin = _Pin
 
@@ -108,9 +107,7 @@ def update_pins_on_auto(pins, state_str, pins_dict):
         else:
             GPIO.apply_state(pin.pin_id, state_str)
             pin.state_str = state_str
-            db.session.add(pin)
-            db.session.commit()
-            db.session.flush()
+            db_session.add(pin)
 
 
 def control_and_sleep(schedules, synced_pins):

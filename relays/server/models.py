@@ -5,12 +5,12 @@ import math
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
-# from database import db_session, Base
-from server import db
+from server.database import db_session, Base
+# from server import db
 from server.util import time_lt_other, add_delta_to_rel_time
 
 
-class Schedule(db.Model):
+class Schedule(Base):
     __tablename__ = 'schedules'
 
     id = Column(Integer, primary_key=True)
@@ -76,7 +76,7 @@ class Schedule(db.Model):
         self.repeat_until = repeat_until
 
 
-class Pin(db.Model):
+class Pin(Base):
     __tablename__ = 'pins'
 
     id = Column(Integer, primary_key=True)

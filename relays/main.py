@@ -5,7 +5,7 @@ import atexit
 from time import sleep
 from multiprocessing import Process
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from server.database import db_session, init_db, init_engine
 
 from server.gpio import OPiGPIOWrapper, RPiGPIOWrapper, GPIOPrintWrapper
 from server.models import Pin, Schedule
@@ -27,9 +27,9 @@ def interrupt():
         p.terminate()
 
 
-def start_scheduler(gpio_wrapper, db, Schedule, Pin):
+def start_scheduler(gpio_wrapper, Schedule, Pin):
     from server import scheduler
-    scheduler.start(gpio_wrapper, db, Schedule, Pin)
+    scheduler.start(gpio_wrapper, Schedule, Pin)
 
 
 def launch_api(app):
@@ -52,7 +52,9 @@ if __name__ == '__main__':
 
     app.config.from_pyfile('server/config/api/default.py')
     app.config.from_pyfile('server/config/api/%s.py' % env, silent=True)
-    db = SQLAlchemy(app)
+
+    init_engine(app.config['DATABASE_URI'])
+    init_db()
 
     from server.views import relays_blueprint, static_blueprint
 
@@ -68,7 +70,7 @@ if __name__ == '__main__':
     # Setup scheduler process
     relays_updater_process = Process(
         target=start_scheduler,
-        args=(GPIO, db, Schedule, Pin))
+        args=(GPIO, Schedule, Pin))
     child_processes.append(relays_updater_process)
 
     relays_updater_process.start()

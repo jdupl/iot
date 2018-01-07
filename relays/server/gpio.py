@@ -65,7 +65,7 @@ class OPiGPIOWrapper(AbstractPhysicalGPIO):
         try:
             self.GPIO.output(pin_id, gpio_val)
 
-            self.state_str = state_str
+            # self.state_str = state_str
             print('Pin %d is now %s (%d)' % (pin_id,
                                              state_str, gpio_val))
         except Exception as e:
