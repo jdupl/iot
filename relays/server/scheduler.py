@@ -103,6 +103,7 @@ def update_pins_on_auto(pins, state_str, pins_dict):
         if pin.on_user_override:
             print('Pin %d is on user_override. Keeping current state.'
                   % pin.pin_id)
+              GPIO.apply_state(pin.pin_id, pin.state_str)
         else:
             GPIO.apply_state(pin.pin_id, state_str)
             pin.state_str = state_str

@@ -23,7 +23,6 @@ def put_relays(pin_id):
     wanted_state = data.get('state_str')
     reset_to_auto = wanted_state == 'auto'
 
-    # p = synced_pins[int(pin_id)]
     p = Pin.query.filter(Pin.pin_id == int(pin_id)).one()
 
     if reset_to_auto:

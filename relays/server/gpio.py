@@ -39,7 +39,6 @@ class RPiGPIOWrapper(AbstractPhysicalGPIO):
 
 class OPiGPIOWrapper(AbstractPhysicalGPIO):
     # Implementation for Orange pi one
-    # Pin ID are physical numbering
     def __init__(self):
         from pyA20.gpio import gpio as _GPIO
         from pyA20.gpio import connector as _connector
@@ -55,12 +54,11 @@ class OPiGPIOWrapper(AbstractPhysicalGPIO):
 
     def apply_state(self, pin_id, state_str):
         # 'on' is 0 on for a normally closed relay
+        self.setup(pin_id, self.GPIO.HIGH)
         gpio_val = 1 if state_str == 'off' else 0
         hwr_pin_id = self.__get_addr_from_phy(pin_id)
         try:
             self.GPIO.output(hwr_pin_id, gpio_val)
-
-            # self.state_str = state_str
             print('Pin %d is now %s (%d)' % (pin_id,
                                              state_str, gpio_val))
         except Exception as e:
