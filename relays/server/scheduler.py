@@ -121,7 +121,7 @@ def control_and_sleep(schedules, synced_pins):
     next_change_in = get_sleep_for(schedules, dt.datetime.now())
     print('Next_change_in %s' % next_change_in)
 
-    sleep(next_change_in)
+    sleep(5)
 
 
 def get_sleep_for(schedules, now):
