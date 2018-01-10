@@ -1,13 +1,10 @@
 import datetime as dt
+import requests
 from time import sleep
 
 from server.database import db_session
 
 from server.util import time_to_datetime
-
-GPIO = None
-Pin = None
-Schedule = None
 
 
 def get_next_event(schedule, now):
@@ -66,39 +63,21 @@ def _get_latest_event(schedule, times, status):
                 return (today_t, status)
 
 
-def start(_GPIO, _Schedule, _Pin):
-    global GPIO, Schedule, Pin
-    GPIO = _GPIO()
-    Schedule = _Schedule
-    Pin = _Pin
-
+def start():
     try:
         print('Starting scheduler process')
-        control_relays()
+        while True:
+            call_api()
+            sleep(5)
     except KeyboardInterrupt:
         print('Got KeyboardInterrupt.')
     except Exception as e:
         print('Got unexpected fatal Exception: %s' % str(e))
         import traceback
         traceback.print_exc()
-    finally:
-        # Reset GPIO
-        GPIO.cleanup()
 
 
-def control_relays():
-    while True:
-        schedules = Schedule.query.all()
-
-        pins_dict = {}
-        for pin in Pin.query.all():
-            pins_dict[pin.pin_id] = pin
-
-        control_and_sleep(schedules, pins_dict)
-        # sleep(1)  # Overflow next schedule
-
-
-def update_pins_on_auto(pins, state_str, pins_dict):
+def update_pins_on_auto(pins, state_str, GPIO):
     for pin in pins:
         if pin.on_user_override:
             print('Pin %d is on user_override. Keeping current state.'
@@ -110,26 +89,5 @@ def update_pins_on_auto(pins, state_str, pins_dict):
             db_session.add(pin)
 
 
-def control_and_sleep(schedules, synced_pins):
-    now = dt.datetime.now()
-    print('Currently %s.' % str(now))
-
-    for schedule in schedules:
-        wanted_state = get_latest_event(schedule, now)[1]
-        update_pins_on_auto(schedule.pins, wanted_state, synced_pins)
-
-    next_change_in = get_sleep_for(schedules, dt.datetime.now())
-    print('Next_change_in %s' % next_change_in)
-
-    sleep(5)
-
-
-def get_sleep_for(schedules, now):
-    next_event = None
-
-    for schedule in schedules:
-        schedule_next_event = get_next_event(schedule, now)[0]
-        if not next_event or schedule_next_event < next_event:
-            next_event = schedule_next_event
-
-    return (next_event - now).total_seconds()
+def call_api():
+    r = requests.get('http://127.0.0.1:5002/api/routine')

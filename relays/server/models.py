@@ -5,8 +5,7 @@ import math
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
-from server.database import db_session, Base
-# from server import db
+from server.database import Base
 from server.util import time_lt_other, add_delta_to_rel_time
 
 

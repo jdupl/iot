@@ -7,8 +7,8 @@ from multiprocessing import Process
 from flask import Flask
 from server.database import init_db
 
+from server import scheduler
 from server.gpio import OPiGPIOWrapper, RPiGPIOWrapper, GPIOPrintWrapper
-from server.models import Pin, Schedule
 
 
 global child_processes, GPIO
@@ -27,9 +27,8 @@ def interrupt():
         p.terminate()
 
 
-def start_scheduler(gpio_wrapper, Schedule, Pin):
-    from server import scheduler
-    scheduler.start(gpio_wrapper, Schedule, Pin)
+def start_scheduler():
+    scheduler.start()
 
 
 def launch_api(app):
@@ -53,6 +52,8 @@ if __name__ == '__main__':
     app.config.from_pyfile('server/config/api/default.py')
     app.config.from_pyfile('server/config/api/%s.py' % env, silent=True)
 
+    app.config['GPIO'] = GPIO()
+
     init_db(app.config['DATABASE_URI'])
 
     from server.views import relays_blueprint, static_blueprint
@@ -67,14 +68,9 @@ if __name__ == '__main__':
     sleep(0.5)
 
     # Setup scheduler process
-    relays_updater_process = Process(
-        target=start_scheduler,
-        args=(GPIO, Schedule, Pin))
+    relays_updater_process = Process(target=start_scheduler)
     child_processes.append(relays_updater_process)
-
     relays_updater_process.start()
-    # Let schedule run once
-    sleep(0.5)
 
     if env != 'test':
         relays_updater_process.join()

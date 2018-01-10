@@ -1,8 +1,11 @@
+import datetime as dt
+
 from flask import Blueprint, jsonify, request, send_from_directory
+from flask import current_app as app
 
 from server.database import db_session
-from server.models import Pin
-
+from server.models import Pin, Schedule
+from server.scheduler import update_pins_on_auto, get_latest_event
 
 relays_blueprint = Blueprint('relays', __name__,)
 static_blueprint = Blueprint('static', __name__,)
@@ -15,6 +18,19 @@ def __to_pub_list(elements):
 @relays_blueprint.route('/api/relays', methods=['GET'])
 def get_relays():
     return jsonify({'relays': __to_pub_list(Pin.query.all())}), 200
+
+
+@relays_blueprint.route('/api/routine', methods=['GET'])
+def run_relay_routine():
+    gpio = app.config['GPIO']
+    now = dt.datetime.now()
+    print('Currently %s.' % str(now))
+
+    for schedule in Schedule.query.all():
+        wanted_state = get_latest_event(schedule, now)[1]
+        update_pins_on_auto(schedule.pins, wanted_state, gpio)
+
+    return jsonify({'success': 'ok'}), 200
 
 
 @relays_blueprint.route('/api/relays/<pin_id>', methods=['POST'])
